@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title></title>
+	<link rel="stylesheet" href="./index.css">
+	<script src="./router2.js"></script>
+</head>
+
+<body>
+	<div id="nav">
+		<img class="logo" src="./static/img/hzf.png" alt="">
+		<ul>
+			<a href="#/home">主页</a>
+			<a href="#/wallet" id='btn_wallet'>钱包</a>
+			<a href="#/block">区块信息</a>
+		</ul>
+	</div>
+
+	<div id='content'>
+		<div id='home' class="page">
+			<iframe src="./render/home/home.html" width="100%" frameborder="0" scrolling="auto"
+				id='frame_home'></iframe>
+		</div>
+		<div id='wallet' class="page">
+			<iframe src="./render/wallet/wallet.html" width="100%" frameborder="0" scrolling="auto"
+				id='frame_wallet'></iframe>
+		</div>
+
+		<div id='block' class="page">
+			<iframe src="./render/block/block.html" width="100%" frameborder="0" scrolling="auto"
+				id='frame_block'></iframe>
+		</div>
+	</div>
+</body>
+
+</html>
+<script>
+	function changeFrameHeight() {
+		var ifms = document.getElementsByTagName('iframe');
+		for (var i = 0; i < ifms.length; i++) {
+			ifms[i].height = document.documentElement.clientHeight - 50;
+		}
+	}
+	window.onresize = () => {
+		changeFrameHeight();
+	}
+	changeFrameHeight();
+</script>
+
+<script src="./render/render.js"></script>
