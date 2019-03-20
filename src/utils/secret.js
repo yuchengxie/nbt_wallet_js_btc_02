@@ -34,7 +34,8 @@ function createWallet(str) {
     let keyWIF = toWIF(prvKeyStr);
     console.log('> keyWIF:', keyWIF, keyWIF.length);
     //给私钥作AES加密
-    let encrypt_prvKey = AES.Encrypt(keyWIF,key);
+    let encrypt_prvKey = AES.Encrypt(prvKeyStr,key);
+    // let encrypt_prvKey = AES.Encrypt(keyWIF,key);
     console.log("> encrypt_prvKey:", encrypt_prvKey, encrypt_prvKey.length);
     let decrypt_prvKey = AES.Decrypt(encrypt_prvKey,key);
     console.log("> decrypt_prvKey:", decrypt_prvKey, decrypt_prvKey.length);
