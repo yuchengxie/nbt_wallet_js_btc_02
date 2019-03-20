@@ -1,30 +1,31 @@
-function Router() {
-    this.routes = {};
-    this.currentURL = '';
-}
-
-const RouterPath = {
+const R = {
     Home: 'home',
     Wallet: 'wallet',
     Block: 'block'
 }
 
-Router.prototype.route = function (path, callback) {
-    this.routes[path] = callback || function () { };
+var navhome = document.getElementById('nav_home');
+var navwallet = document.getElementById('nav_wallet');
+var navblock = document.getElementById('nav_block');
+console.log('nav:', navhome);
+
+function tab(e) {
+    var url=e.getAttribute('id').split('_')[1];
+    sessionStorage.setItem('currentUrl',url);
+    console.log('保存currentUrl:',sessionStorage.getItem('currentUrl'));
+    display(url);
 }
 
-Router.prototype.refresh = function () {
-    this.currentURL = location.hash.slice(1) || '/home';
-    this.routes[this.currentURL]();
-}
+window.addEventListener('load', function () {
+    console.log('reload');
+    console.log('currentUrl:',sessionStorage.getItem('currentUrl'));
+    
+    display(sessionStorage.getItem('currentUrl')||'home');
+})
 
-Router.prototype.init = function () {
-    window.addEventListener('load', this.refresh.bind(this), false);
-    window.addEventListener('hashchange', this.refresh.bind(this), false);
-}
-
-function display_page(url) {
+function display(url) {
     var eles = document.getElementById('content').children;
+    console.log('url:',url);
     for (var i = 0; i < eles.length; i++) {
         var e = eles[i];
         if (url != e.getAttribute('id')) {
@@ -34,19 +35,3 @@ function display_page(url) {
         }
     }
 }
-
-window.Router = new Router();
-
-Router.route('/' + RouterPath.Home, function () {
-    display_page(RouterPath.Home);
-})
-
-Router.route('/' + RouterPath.Wallet, function () {
-    display_page(RouterPath.Wallet);
-})
-
-Router.route('/' + RouterPath.Block, function () {
-    display_page(RouterPath.Block);
-})
-
-window.Router.init();
