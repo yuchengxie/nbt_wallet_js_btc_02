@@ -3,8 +3,9 @@ const path = require('path');
 const fu = require('./fileutils');
 const secret=require('./secret')
 
-let default_fp = path.join(__dirname, '../../../data/');
-let fp = path.join(__dirname, '../../../data/account/');
+let default_fp = path.join(__dirname, '../../data/');
+// let fp = path.join(__dirname, '../../../data/account/');
+let fp = path.join(__dirname, '../../data/account/');
 let filename='ttt.cfg';
 
 fu.mkdirs(fp, function () {

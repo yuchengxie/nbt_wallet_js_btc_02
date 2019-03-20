@@ -15,7 +15,7 @@ window.onload = function () {
     var btn_wallet_create = frm.contentWindow.document.getElementById(E.btn_wallet_create);
 
     btn_wallet_create.onclick = function () {
-        ipcRenderer.send('test2', 'hahha 2222 db');
+        ipcRenderer.send('create', '18800000000123456');
     }
 
     /**
