@@ -5,15 +5,24 @@
 	<meta charset="utf-8">
 	<title></title>
 	<link rel="stylesheet" href="./index.css">
+	<script>
+		window.$ = window.jQuery = require('jquery');
+		window.Bootstrap = require('bootstrap');
+	</script>
+	<script src="../src/static/bootstrap/js/jquery.js"></script>	
+	<script src="../src/static/bootstrap/js/bootstrap.js"></script>
+	<link rel="stylesheet" href="../src/static/bootstrap/css/bootstrap.css">
 </head>
 
 <body>
+
 	<div id="nav">
 		<img class="logo" src="./static/img/hzf.png" alt="">
 		<ul>
 			<a id='nav_home' onclick="tab(this)">主页</a>
 			<a id='nav_wallet' onclick="tab(this)">钱包</a>
-			<a id='nav_block' onclick="tab(this)">区块信息</a>
+			<a id='nav_block' onclick="tab(this)">区块查寻</a>
+			<a id='nav_info' onclick="tab(this)">钱包信息</a>
 		</ul>
 	</div>
 
@@ -30,6 +39,11 @@
 		<div id='block' class="page">
 			<iframe src="./render/block/block.html" width="100%" name='frameblock' frameborder="0" scrolling="auto"
 				id='frame_block'></iframe>
+		</div>
+
+		<div id='info' class="page">
+			<iframe src="./render/info/info.html" width="100%" name='frameblock' frameborder="0" scrolling="auto"
+				id='frame_info'></iframe>
 		</div>
 	</div>
 </body>
