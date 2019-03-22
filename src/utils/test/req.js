@@ -3,7 +3,7 @@
 // http://raw0.nb-chain.net/txn/state/account?addr=1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV&uock=0&uock2=0
 
 var http = require('http');
-var sha256=require('js-sha256');
+var sha256 = require('js-sha256');
 var URL = 'http://raw0.nb-chain.net/txn/state/account?addr=1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV&uock=0&uock2=0'
 const StringDecoder = require('string_decoder').StringDecoder;
 var decoder = new StringDecoder('utf8');
@@ -40,53 +40,72 @@ function parse(data) {
   }
   //get binary payload
   var buf = data.slice(16, 20);
-  var length = littleEndian(buf);
-  var payload=data.slice(24,24+length);
-  console.log('> payload:',payload,payload.length);
+  var length = bufULE32(buf);
+  var payload = data.slice(24, 24 + length);
   //check the checksum
-  var checksum=toBuffer(sha256(toBuffer(sha256(payload)))).slice(0,4);
-  console.log('> checksum:',checksum,checksum.length);
-  if(data.slice(20,24).compare(checksum)!=0){
-      throw Error('bad checksum');
+  var checksum = toBuffer(sha256(toBuffer(sha256(payload)))).slice(0, 4);
+  console.log('> checksum:', checksum, checksum.length);
+  if (data.slice(20, 24).compare(checksum) != 0) {
+    throw Error('bad checksum');
   }
-  console.log(data.slice(20,24));
-  var command=data.slice(4,16);
-  console.log('> command:',command,command.length);
+  var command = data.slice(4, 16);
+  var stripCommand=strip(command);
+  var msg_type=stripCommand.toString('latin1');
+  console.log('> msg_type:', msg_type, msg_type.length);
+  if (msg_type){
+    
+  }else{
+    throw Error('command not exist');
+  }
 }
 
 function toBuffer(hex) {
   var typedArray = new Uint8Array(hex.match(/[\da-f]{2}/gi).map(function (h) {
-      return parseInt(h, 16)
+    return parseInt(h, 16)
   }))
   var buffer = typedArray.buffer
   buffer = Buffer.from(buffer);
   return buffer;
 }
 
-function littleEndian(buf) {
+//32位无符号小端
+function bufULE32(buf) {
   var t = 0;
-  var arr=hexArr(buf.toString('hex'));
+  var arr = hexArr(buf.toString('hex'));
   console.log('buf:', buf, buf.length);
   for (var i = 0; i < arr.length; i++) {
     let b = arr[i];
-    var c=parseInt(b,16);
-    var d=Math.pow(256,i);
-    t+=c*d;
+    var c = parseInt(b, 16);
+    var d = Math.pow(256, i);
+    t += c * d;
   }
   return t;
 }
 
 function hexArr(hexStr) {
-  var arr=[];
-  for (var i = 0; i < hexStr.length/2; i++) {
-    arr.push(hexStr[2*i]+hexStr[2*i+1]);
+  var arr = [];
+  for (var i = 0; i < hexStr.length / 2; i++) {
+    arr.push(hexStr[2 * i] + hexStr[2 * i + 1]);
   }
   return arr;
 }
 
+function strip(buf) {
+  var arr = [];
+  for (var i = 0; i < buf.length; i++) {
+    arr.push(buf[i]);
+  }
+  for(var i=arr.length-1;i>=0;i--){
+    if (arr[i]==0x00){
+        arr.splice(i,1);
+    }else{
+      break;
+    }
+  }
+  return Buffer.from(arr);
+}
 
-
-// getInfoData();
+getInfoData();
 
 //测试
 buf1 = Buffer.from([0x58, 0xcf, 0x01, 0x10]);
