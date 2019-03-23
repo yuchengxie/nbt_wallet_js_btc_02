@@ -1,14 +1,6 @@
-// b'\xf9nbtaccstate\x00\x00\x00\x00X\x00\x00\x00.\xe1:\xe7\x00\x00\x00\x00{V\x94\\61118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV\x00\x04\x00\x00\x01\x00\x00\x10\x00\x00QP\x00\x00t;\xa4\x0b\x00\x00\x00KO\x00\x00
-// var ddd= "<AccState link_no=0 timestamp=1553225339 account=b'1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV' search=1024 found=[<UockValue uock=22607058579750912 value=50000000000 height=20299>]>"
-// http://raw0.nb-chain.net/txn/state/account?addr=1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV&uock=0&uock2=0
-
 var http = require('http');
 var sha256 = require('js-sha256');
 var URL = 'http://raw0.nb-chain.net/txn/state/account?addr=1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV&uock=0&uock2=0'
-const StringDecoder = require('string_decoder').StringDecoder;
-var decoder = new StringDecoder('utf8');
-
-//get 请求外网
 
 function getInfoData() {
   http.get(URL, function (req, res) {
@@ -25,6 +17,7 @@ function getInfoData() {
       for (var i = 1; i < arr.length; i++) {
         b0 = Buffer.concat(b0, arr[i]);
       }
+      
       parse(b);
     });
   });
@@ -35,13 +28,16 @@ const magic = Buffer.from([0xf9, 0x6e, 0x62, 0x74]);
 function parse(data) {
   console.log('data:', data, data.length);
   if (data.slice(0, 4).compare(magic) != 0) {
-    //不相等
     throw Error('bad magic number');
   }
-  //get binary payload
   var buf = data.slice(16, 20);
-  var length = bufULE32(buf);
-  var payload = data.slice(24, 24 + length);
+  // var length = bufULE32(buf);
+  var value = bufToNumber(buf);
+  var buf = Buffer.allocUnsafe(4);
+  buf.writeUInt32LE(value, 0);
+  var v2 = bufToNumber(buf);
+  var payload = data.slice(24, 24 + v2);
+  console.log('> payload:', payload, payload.length);
   //check the checksum
   var checksum = toBuffer(sha256(toBuffer(sha256(payload)))).slice(0, 4);
   console.log('> checksum:', checksum, checksum.length);
@@ -49,14 +45,125 @@ function parse(data) {
     throw Error('bad checksum');
   }
   var command = data.slice(4, 16);
-  var stripCommand=strip(command);
-  var msg_type=stripCommand.toString('latin1');
+  var stripCommand = strip(command);
+  var msg_type = stripCommand.toString('latin1');
   console.log('> msg_type:', msg_type, msg_type.length);
-  if (msg_type){
-    
-  }else{
-    throw Error('command not exist');
+  if (msg_type) {
+    //TODO
+    m1(payload);
+    m2(payload);
+    m3(payload);
+    m4(payload);
+    m5(payload);
+  } else {
+    throw Error('command error');
   }
+}
+
+function m1(payload) {
+  var buf = Buffer.allocUnsafe(4);
+  var buf1 = payload.slice(0, 4);
+  console.log('link_no buf:', buf1);
+  var v = bufToNumber(buf1);
+  buf.writeUInt32LE(v, 0);
+  console.log('> link_no:', buf, bufToNumber(buf));
+}
+
+function m2(payload) {
+  var buf = Buffer.allocUnsafe(4);
+  var buf1 = payload.slice(4, 8);
+  console.log('timestamp buf:', buf1);
+  var v = bufToNumber(buf1);
+  buf.writeUInt32LE(v, 0);
+  console.log('> timestamp:', buf, bufToNumber(buf));
+}
+
+function m3(payload) {
+  var s = payload.slice(8, 9);
+  console.log('s:', s);
+  var a1 = bufToNumber(s);
+  if (a1 < 0xFD) {
+    var buf = payload.slice(9, 9 + a1);
+    var account = buf.toString('latin1');
+    console.log('> account buf:', buf, buf.length);
+    console.log('account:', account, account.length);
+  }
+}
+
+function m4(payload) {
+  var buf1 = payload.slice(63, 67);
+  var buf = Buffer.allocUnsafe(4);
+  console.log('search buf:', buf1);
+  var v = bufToNumber(buf1);
+  buf.writeUInt32LE(v, 0);
+  console.log('> search:', buf, bufToNumber(buf));
+}
+
+function m5(payload) {
+  var buf1 = payload.slice(67, 68);
+  var buf = Buffer.allocUnsafe(4);
+  console.log('> buf1:', buf1);
+  var v = bufToNumber(buf1);
+  if (v < 0xFD) {
+    uock(payload);
+    value(payload);
+    height(payload);
+  }
+}
+
+function height(payload) {
+  var buf1 = payload.slice(84, 88);
+  var buf = Buffer.allocUnsafe(4);
+  console.log('> height buf1:', buf1);
+  buf = LE64(buf1);
+  console.log('> LE64 buf1:', buf);
+  var v = bufToNumber(buf);
+  console.log('height:', v);
+}
+
+function value(payload) {
+  var buf1 = payload.slice(76, 84);
+  var buf = Buffer.allocUnsafe(8);
+  console.log('> value buf1:', buf1);
+  buf = LE64(buf1);
+  console.log('> LE64 buf1:', buf);
+  var v = bufToNumber(buf);
+  console.log('value:', v);
+}
+
+function uock(payload) {
+  var buf1 = payload.slice(68, 76);
+  var buf = Buffer.allocUnsafe(8);
+  console.log('> uock buf1:', buf1);
+  buf = LE64(buf1);
+  console.log('> LE64 buf1:', buf);
+  var v = bufToNumber(buf);
+  console.log('uock:', v);
+}
+
+function LE64(buf) {
+  console.log('buf:', buf);
+  var arr = [];
+  for (var i = 0; i < buf.length; i++) {
+    arr.push(buf[i]);
+  }
+  arr = arr.reverse();
+  console.log(arr);
+  var buf2 = Buffer.from(arr);
+  return buf2;
+}
+
+
+function bufToNumber(buf) {
+  var t = 0;
+  var arr = hexArr(buf.toString('hex'));
+  for (var i = arr.length - 1; i >= 0; i--) {
+    let b = arr[i];
+    var c = parseInt(b, 16);
+    var d = Math.pow(256, arr.length - i - 1);
+    t += c * d;
+  }
+  return t;
 }
 
 function toBuffer(hex) {
@@ -95,10 +202,10 @@ function strip(buf) {
   for (var i = 0; i < buf.length; i++) {
     arr.push(buf[i]);
   }
-  for(var i=arr.length-1;i>=0;i--){
-    if (arr[i]==0x00){
-        arr.splice(i,1);
-    }else{
+  for (var i = arr.length - 1; i >= 0; i--) {
+    if (arr[i] == 0x00) {
+      arr.splice(i, 1);
+    } else {
       break;
     }
   }
@@ -108,5 +215,9 @@ function strip(buf) {
 getInfoData();
 
 //测试
-buf1 = Buffer.from([0x58, 0xcf, 0x01, 0x10]);
-// littleEndian(buf1)
+// let buf1 = Buffer.from([0x58, 0xcf, 0x01, 0x20]);
+// LE64(buf1);
+// console.log('number:', calcValue(buf1));
+// console.log('v:',v);
+
+// f96e6274616363737461746500000000580000003bb69b1500000000fb12955c36313131384d69355878716d7154427037546e50516431486b39585961674a517044635a7536456947453156625848417739695a4750560004000001000010000051500000743ba40b0000004b4f0000
