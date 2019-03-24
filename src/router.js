@@ -1,17 +1,10 @@
 const R = {
     Home: 'home',
-    // Wallet: 'wallet',
     Wallet_Create: 'wallet_create',
     Wallet_Import: 'wallet_import',
     Wallet_Info: 'wallet_info',
     Block: 'block',
-    Info:'info',
 }
-
-// <a class="dropdown-item" id='nav_wallet_create' onclick="tab(this)">创建钱包</a>
-// 						<a class="dropdown-item" id='nav_wallet_import' onclick="tab(this)">导入钱包</a>
-// 						<div class="dropdown-divider"></div>
-// 						<a class="dropdown-item" id='nav_wallet_info' onclick="tab(this)">查看钱包</a>
 
 var navhome = document.getElementById('nav_home');
 // var navwallet = document.getElementById('nav_wallet');
@@ -32,30 +25,24 @@ function tab(e) {
     }else{
         throw Error('url error');
     }
-    console.log('tab url:',url);
     sessionStorage.setItem('currentUrl',url);
     console.log('保存currentUrl:',sessionStorage.getItem('currentUrl'));
     display(url);
 }
 
 window.addEventListener('load', function () {
-    console.log('reload');
-    console.log('currentUrl:',sessionStorage.getItem('currentUrl'));
     
-    display(sessionStorage.getItem('currentUrl')||'info');
+    display(sessionStorage.getItem('currentUrl')||'home');
 })
 
 function display(url) {
     var eles = document.getElementById('content').children;
-    // console.log('eles:',eles);
-    console.log('display url:',url);
     for (var i = 0; i < eles.length; i++) {
         var e = eles[i];
         
         if (url != e.getAttribute('id')) {
             e.classList.remove('active');
         } else {
-            console.log('当前点击了:',e);
             e.classList.add('active');
         }
     }

@@ -9,14 +9,8 @@
     /* background: none; */
 }
 
-#content {
-    /* padding: 0px;
-    margin: 0px; */
-    position: fixed;
-    top: 57px;
-    left: 0;
-    height: calc(100% - 57px);
-    width: 100%;
+#content{
+    background: lightblue;
 }
 
 .page {
