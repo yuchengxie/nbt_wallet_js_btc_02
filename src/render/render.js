@@ -1,9 +1,12 @@
 const ipcRenderer = require('electron').ipcRenderer;
 
 const E = {
-    frame_wallet: 'frame_wallet',
+    frame_wallet_create: 'frame_wallet_create',
     btn_wallet_create: 'btn_wallet_create',
-    btn_wallet_save: 'btn_wallet_save',
+    
+    frame_wallet_import: 'frame_wallet_import',
+    btn_wallet_import: 'btn_wallet_import',
+
 
     frame_block: 'frame_block',
     btn_block: 'btn_block',
@@ -13,18 +16,18 @@ const E = {
 }
 
 window.onload = function () {
-    /**
-     * wallet
-     */
-    var frmWallet = document.getElementById(E.frame_wallet);
-    var btn_wallet_create = frmWallet.contentWindow.document.getElementById(E.btn_wallet_create);
-    var btn_wallet_save = frmWallet.contentWindow.document.getElementById(E.btn_wallet_save);
+    //wallet_create
+    var frmWalletCreate = document.getElementById(E.frame_wallet_create);
+    var btn_wallet_create = frmWalletCreate.contentWindow.document.getElementById(E.btn_wallet_create);
+    //wallet_import
+    var frmWalletImport = document.getElementById(E.frame_wallet_import);
+    var btn_wallet_import = frmWalletImport.contentWindow.document.getElementById(E.btn_wallet_import);
 
     btn_wallet_create.onclick = function () {
         ipcRenderer.send('create', '18800000000123456');
     }
 
-    btn_wallet_save.onclick = function () {
+    btn_wallet_import.onclick = function () {
         // ipcRenderer.send('save',address);
         ipcRenderer.send('save', '4dabbaf739e4dfec415fea38f1efdbb67a0786746db3d1063b2339a44fb13458');
     }
@@ -36,7 +39,7 @@ window.onload = function () {
         .document.getElementById(E.btn_block);
 
     btn_block.onclick = function () {
-        ipcRenderer.send('test', 'hahha 1111 db');
+        ipcRenderer.send('test', '区块查询');
     }
 
     /**
