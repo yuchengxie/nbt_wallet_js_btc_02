@@ -18,16 +18,6 @@
 
 <body>
 
-	<!-- <div id="nav">
-		<img class="logo" src="./static/img/hzf.png" alt="">
-		<ul>
-			<a id='nav_home' onclick="tab(this)">主页</a>
-			<a id='nav_wallet' onclick="tab(this)">钱包</a>
-			<a id='nav_block' onclick="tab(this)">区块查寻</a>
-			<a id='nav_info' onclick="tab(this)">钱包信息</a>
-		</ul>
-	</div> -->
-
 	<nav class="navbar fixed-top navbar-expand-lg navbar-dark bg-dark">
 		<a class="navbar-brand" href="#">
 			<img class="logo" src="./static/img/hzf.png" alt="">
@@ -42,9 +32,7 @@
 				<li class="nav-item active">
 					<a class="nav-link" id='nav_home' onclick="tab(this)">首页 <span class="sr-only">(current)</span></a>
 				</li>
-				<li class="nav-item">
-					<a class="nav-link" id='nav_block' onclick="tab(this)">区块查寻</a>
-				</li>
+
 				<li class="nav-item dropdown">
 					<a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown"
 						aria-haspopup="true" aria-expanded="false">
@@ -56,9 +44,16 @@
 						<div class="dropdown-divider"></div>
 						<a class="dropdown-item" id='nav_wallet_info' onclick="tab(this)">查看钱包</a>
 					</div>
+
 				</li>
 				<li class="nav-item">
-					<a class="nav-link" id='nav_info' onclick="tab(this)">钱包信息</a>
+					<a class="nav-link" id='nav_block' onclick="tab(this)">区块查找</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" id='nav_transaction' onclick="tab(this)">交易</a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link" id='nav_cun' onclick="tab(this)">存证</a>
 				</li>
 			</ul>
 			<form class="form-inline my-2 my-lg-0">
@@ -67,12 +62,6 @@
 			</form>
 		</div>
 	</nav>
-
-	<!-- <div id="content">
-		<iframe src="./render/home/home.html" id='frame_home' class="page"></iframe>
-		<iframe src="./render/home/wallet.html" id='frame_wallet' class="page"></iframe>
-		<iframe src="./render/home/block.html" id='frame_block' class="page"></iframe>
-	</div> -->
 
 
 	<div id='content'>
