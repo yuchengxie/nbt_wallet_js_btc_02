@@ -32,7 +32,7 @@ function tab(e) {
 
 window.addEventListener('load', function () {
     
-    display(sessionStorage.getItem('currentUrl')||R.Wallet_Create);
+    display(sessionStorage.getItem('currentUrl')||R.Wallet_Info);
 })
 
 function display(url) {

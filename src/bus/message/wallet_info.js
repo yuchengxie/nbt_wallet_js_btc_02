@@ -1,8 +1,8 @@
 
-function Found(){
-    this.uock=0;
-    this.value=0;
-    thsi.height=0;
+function Found() {
+    this.uock = 0;
+    this.value = 0;
+    this.height = 0;
 }
 
 function WalletInfo() {
@@ -14,7 +14,7 @@ function WalletInfo() {
 }
 
 const fromBuffer = (buffer) => {
-    console.log('>>>接受buffer',buffer,buffer.length);
+    console.log('>>>接受buffer', buffer, buffer.length);
 
     // if (buffer.length < 88) throw new Error('Buffer too small (<88 bytes)');
 
@@ -49,7 +49,7 @@ const fromBuffer = (buffer) => {
             console.log('account:', account, account.length);
             return account;
         }
-        
+
     }
 
     function m4(payload) {
@@ -67,50 +67,49 @@ const fromBuffer = (buffer) => {
         console.log('> buf1:', buf1);
         var v = bufToNumber(buf1);
         if (v < 0xFD) {
-            uock(payload);
-            value(payload);
-            height(payload);
+            var found = new Found();
+            found.uock = uock(payload);
+            found.value = value(payload);
+            found.height = height(payload);
+            return found;
         }
     }
 
     function height(payload) {
         var buf1 = payload.slice(84, 88);
         var buf = Buffer.allocUnsafe(4);
-        console.log('> height buf1:', buf1);
         buf = LE64(buf1);
-        console.log('> LE64 buf1:', buf);
-        var v = bufToNumber(buf);
-        console.log('height:', v);
+        var _height = bufToNumber(buf);
+        console.log('height:', _height);
+        return _height;
     }
 
     function value(payload) {
         var buf1 = payload.slice(76, 84);
         var buf = Buffer.allocUnsafe(8);
-        console.log('> value buf1:', buf1);
         buf = LE64(buf1);
-        console.log('> LE64 buf1:', buf);
-        var v = bufToNumber(buf);
-        console.log('value:', v);
+        var _value = bufToNumber(buf);
+        console.log('value:', _value);
+        return _value;
     }
 
     function uock(payload) {
         var buf1 = payload.slice(68, 76);
         var buf = Buffer.allocUnsafe(8);
-        console.log('> uock buf1:', buf1);
         buf = LE64(buf1);
-        console.log('> LE64 buf1:', buf);
-        var v = bufToNumber(buf);
-        console.log('uock:', v);
+        var _uock = bufToNumber(buf);
+        console.log('uock:', _uock);
+        return _uock;
     }
 
-    
+
     let walletinfo = new WalletInfo();
 
-    walletinfo.link_no=m1(buffer);
-    walletinfo.timestamp=m2(buffer);
-    walletinfo.account=m3(buffer);
-    walletinfo.search=m4(buffer);
-    walletinfo.found=m5(buffer);
+    walletinfo.link_no = m1(buffer);
+    walletinfo.timestamp = m2(buffer);
+    walletinfo.account = m3(buffer);
+    walletinfo.search = m4(buffer);
+    walletinfo.found = m5(buffer);
 
     return walletinfo;
 

@@ -65,6 +65,7 @@
     "secp256k1": "^3.6.2",
     "secure-random": "^1.1.1",
     "sha512": "^0.0.1",
+    "sync-request": "^6.1.0",
     "wif": "^2.0.6"
   },
   "devDependencies": {

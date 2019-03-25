@@ -1,6 +1,7 @@
-var http = require('http');
 var sha256 = require('js-sha256');
-var wallet_info=require('./message/wallet_info');
+var wallet_info = require('./message/wallet_info');
+var request = require('sync-request')
+
 
 var url_base = 'http://raw0.nb-chain.net/txn/state/account?'
 
@@ -8,28 +9,14 @@ var url_base = 'http://raw0.nb-chain.net/txn/state/account?'
 
 var URL = 'http://raw0.nb-chain.net/txn/state/account?addr=1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV&uock=0&uock2=0'
 
-function getInfoData(addr,uock,uock2) {
+function getInfoData(addr, uock, uock2) {
   // var URL=url_base+'addr='+addr+'&uock='+uock+'&uock2='+uock2;
-  console.log('URL:',URL);
-  http.get(URL, function (req, res) {
-    req.headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    }
-    req.timeout = 30;
-    var arr = [];
-    req.on('data', function (chunk) {
-      arr.push(chunk);
-    });
-    req.on('end', function () {
-      var b = arr[0];
-      for (var i = 1; i < arr.length; i++) {
-        b0 = Buffer.concat(b0, arr[i]);
-      }
-      console.log('b:', b, b.length, b.toString('hex'));
-      // parse(b);
-      // return parse(b);
-    });
-  });
+  // console.log('URL:', URL);
+  // var res = request('GET', URL);
+  // var res=res.getBody();
+  // console.log('sync-res:',res,res.length);
+  // parse(b);
+
 }
 
 const magic = Buffer.from([0xf9, 0x6e, 0x62, 0x74]);
@@ -57,9 +44,11 @@ function parse(data) {
   var msg_type = stripCommand.toString('latin1');
   console.log('> msg_type:', msg_type, msg_type.length);
   if (msg_type) {
-    var info=wallet_info.fromBuffer(payload);
-    return info;
-    
+    // var walletinfo=wallet_info.WalletInfo();
+    var v = wallet_info.fromBuffer(payload);
+    console.log('v:', v);
+    return v;
+
     // walletinfo.fromBuffer(payload);
     // //TODO
     // m1(payload);
@@ -225,8 +214,7 @@ function strip(buf) {
 }
 
 
-exports.getInfoData=getInfoData
-exports.parse=parse;
+exports.getInfoData = getInfoData
 
 // getInfoData();
 
