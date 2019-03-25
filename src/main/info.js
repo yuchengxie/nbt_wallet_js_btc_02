@@ -3,8 +3,6 @@ var querystring = require('querystring');
 const file = require('../utils/file');
 var reqinfo=require('../bus/reqinfo');
 
-const WEB_SERVER_ADDR = 'https://api.nb-coin.com';
-
 function getInfo(account, password, pv, pb, after, before, address) {
     console.log('get info');
     console.log('> account:', account);
@@ -25,11 +23,11 @@ function getInfo(account, password, pv, pb, after, before, address) {
     } else {
         
     }
-    account_state(addr,before, after,address);
+    return account_state(addr,before, after,address);
 }
 
 function account_state(addr,uock_from, uock_before, address) {
-    reqinfo.getInfoData();
+    return reqinfo.getInfoData(addr,uock_from, uock_before);
     
     // const url = WEB_SERVER_ADDR + '/txn/state/account';
     // var contents = querystring.stringify({

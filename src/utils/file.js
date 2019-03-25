@@ -28,7 +28,7 @@ function create(data) {
     }
     var data = JSON.stringify(jsonData);
     // fu.mkdirs(fp, function () {
-    //     saveToFile(data, filename)
+    saveToFile(data, filename)
     // })
     return res.addr;
 }
@@ -78,7 +78,7 @@ function readAccount(account, password) {
     } else {
         sPath = fp + account + '.cfg';
     }
-    var addr =loadFromFile(sPath, password);
+    var addr = loadFromFile(sPath, password);
     console.log('> addr:', addr);
     return addr;
 }

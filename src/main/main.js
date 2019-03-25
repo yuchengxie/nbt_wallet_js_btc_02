@@ -22,8 +22,7 @@ ipcMain.on('info',function(event,data){
     let after=0;
     let before=0;
     let address='';
-    info.getInfo(account,password,pv,pb,after,before,address);
-
+    let v=info.getInfo(account,password,pv,pb,after,before,address);
 })
 
 

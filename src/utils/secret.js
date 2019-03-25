@@ -67,6 +67,7 @@ function genAddr(BIP32) {
     let checksum = toBuffer(sha256(d1buf)).slice(0, 4);
     let result = Buffer.concat([v, checksum]);
     let addr = bs58.encode(result);
+    console.log('>>> addr:',addr);
     return addr;
 }
 

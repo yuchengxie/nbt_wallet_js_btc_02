@@ -3,9 +3,22 @@ const ipcRenderer = require('electron').ipcRenderer;
 window.onload = function () {
     //wallet_create
     var btn_wallet_create=getElement('frame_wallet_create','btn_wallet_create');
+    var phone=getElement('frame_wallet_create','phone');
+    var pwd=getElement('frame_wallet_create','pwd');
+    var addr=getElement('frame_wallet_create','addr');
     btn_wallet_create.onclick = function () {
-        ipcRenderer.send('create', '18800000000123456');
+        var v=phone.value+pwd.value;
+        console.log('phone v:',v,v.length);
+        ipcRenderer.send('create', v);
     }
+
+    ipcRenderer.on('replycreate',function(event,data){
+        if (data){
+            console.log('replycreate:',data,data.length);
+            addr.innerText=data;
+        }
+    })
+
     //wallet_import
     var btn_wallet_import=getElement('frame_wallet_import','btn_wallet_import');
     btn_wallet_import.onclick = function () {

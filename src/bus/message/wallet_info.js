@@ -14,7 +14,9 @@ function WalletInfo() {
 }
 
 const fromBuffer = (buffer) => {
-    if (buffer.length < 88) throw new Error('Buffer too small (<88 bytes)');
+    console.log('>>>接受buffer',buffer,buffer.length);
+
+    // if (buffer.length < 88) throw new Error('Buffer too small (<88 bytes)');
 
     // let offset = 0;
     function m1(payload) {

@@ -2,14 +2,20 @@ var http = require('http');
 var sha256 = require('js-sha256');
 var wallet_info=require('./message/wallet_info');
 
+var url_base = 'http://raw0.nb-chain.net/txn/state/account?'
+
+// addr=1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV&uock=0&uock2=0
+
 var URL = 'http://raw0.nb-chain.net/txn/state/account?addr=1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV&uock=0&uock2=0'
 
-function getInfoData() {
+function getInfoData(addr,uock,uock2) {
+  // var URL=url_base+'addr='+addr+'&uock='+uock+'&uock2='+uock2;
+  console.log('URL:',URL);
   http.get(URL, function (req, res) {
     req.headers = {
       'Content-Type': 'application/x-www-form-urlencoded',
     }
-    req.timeout = 30
+    req.timeout = 30;
     var arr = [];
     req.on('data', function (chunk) {
       arr.push(chunk);
@@ -19,8 +25,8 @@ function getInfoData() {
       for (var i = 1; i < arr.length; i++) {
         b0 = Buffer.concat(b0, arr[i]);
       }
-      parse(b);
       console.log('b:', b, b.length, b.toString('hex'));
+      return parse(b);
     });
   });
 }
@@ -53,6 +59,7 @@ function parse(data) {
     // var walletinfo=wallet_info.WalletInfo();
     var v=wallet_info.fromBuffer(payload);
     console.log('v:',v);
+    return v;
     
     // walletinfo.fromBuffer(payload);
     // //TODO
