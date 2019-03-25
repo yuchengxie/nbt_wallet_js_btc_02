@@ -1,8 +1,7 @@
 const { ipcMain } = require('electron')
 let file = require('../utils/file')
-let info = require('./info');
-let p = require('../bus/reqinfo')
-let http=require('http')
+let p = require('../parse/walletinfoparse');
+let http=require('http');
 
 ipcMain.on('save', function (event, data) {
     file.save(data);
@@ -24,7 +23,7 @@ ipcMain.on('info', function (event, data) {
     let after = 0;
     let before = 0;
     let address = '';
-    var addr = info.getAddrFromCfg(account, password);
+    var addr = file.readAccount(account, password);
 
     var URL = 'http://raw0.nb-chain.net/txn/state/account?addr=1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV&uock=0&uock2=0'
     

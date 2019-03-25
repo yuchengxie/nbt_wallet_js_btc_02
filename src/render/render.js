@@ -31,6 +31,28 @@ window.onload = function () {
         ipcRenderer.send('info', 'this is info');
     }
 
+    var info_list=getElement('frame_wallet_info','info_list');
+    var link_no=getElement('frame_wallet_info','link_no');
+    var timestamp=getElement('frame_wallet_info','timestamp');
+    var account=getElement('frame_wallet_info','account');
+    var search=getElement('frame_wallet_info','search');
+    var found_uock=getElement('frame_wallet_info','found_uock');
+    var found_value=getElement('frame_wallet_info','found_value');
+    var found_height=getElement('frame_wallet_info','found_height');
+    ipcRenderer.on('replyinfo',function(event,data){
+        if (data){
+            console.log('replyinfo:',data,data.length);
+            info_list.style.display='block';
+            link_no.innerText='link_no:'+data.link_no;
+            timestamp.innerText='timestamp:'+data.timestamp;
+            account.innerText='account:'+data.account;
+            search.innerText='search:'+data.search;
+            found_uock.innerText='found_uock:'+data.found.uock;
+            found_value.innerText='found_value:'+data.found.value;
+            found_height.innerText='found_height:'+data.found.height;
+        }
+    })
+
     //block
     var btn_block=getElement('frame_block','btn_block');
     btn_block.onclick = function () {

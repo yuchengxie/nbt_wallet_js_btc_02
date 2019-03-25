@@ -16,7 +16,6 @@ var navblock = document.getElementById('nav_block');
 
 function tab(e) {
     var p=e.getAttribute('id').split('_');
-    console.log('p:',p,p.length);
     var url='';
     if(p.length==2){
         url=p[1];
@@ -26,7 +25,6 @@ function tab(e) {
         throw Error('url error');
     }
     sessionStorage.setItem('currentUrl',url);
-    console.log('保存currentUrl:',sessionStorage.getItem('currentUrl'));
     display(url);
 }
 
