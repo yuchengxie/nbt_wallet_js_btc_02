@@ -7,12 +7,10 @@ const R = {
 }
 
 var navhome = document.getElementById('nav_home');
-// var navwallet = document.getElementById('nav_wallet');
 var navwallet = document.getElementById('nav_wallet_create');
 var navwallet = document.getElementById('nav_wallet_import');
 var navwallet = document.getElementById('nav_wallet_info');
 var navblock = document.getElementById('nav_block');
-// var navinfo = document.getElementById('nav_info');
 
 function tab(e) {
     var p=e.getAttribute('id').split('_');
@@ -29,7 +27,6 @@ function tab(e) {
 }
 
 window.addEventListener('load', function () {
-    
     display(sessionStorage.getItem('currentUrl')||R.Block);
 })
 

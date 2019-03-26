@@ -36,10 +36,10 @@ ipcMain.on('block',function(event,data){
                 b0 = Buffer.concat(b0, arr[i]);
             }
             console.log('b:', b, b.length, b.toString('hex'));
-            blockparse.parse(b);
+            var block=blockparse.parse(b);
             // var obj=p.parse(b);
             // console.log('obj:',obj);
-            event.sender.send('replyblock','111');
+            event.sender.send('replyblock',block);
         });
     });
 
