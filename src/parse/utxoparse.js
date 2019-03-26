@@ -2,26 +2,6 @@ var sha256 = require('js-sha256');
 
 const magic = Buffer.from([0xf9, 0x6e, 0x62, 0x74]);
 
-function ReplyHeaders() {
-    this.link_no = 0;
-    this.heights = [];
-    this.txcks = [];
-    this.headers = [];
-}
-
-function BlockHeader() {
-    this.version = 0;
-    this.link_no = 0;
-    this.prev_block = '';
-    this.merkle_root = '';
-    this.timestamp = 0;
-    this.bits = 0;
-    this.nonce = 0;
-    this.miner = '';
-    this.sig_tee = '';
-    this.txn_count = 0;
-}
-
 function parse(data) {
     console.log('data:', data, data.length);
     if (data.slice(0, 4).compare(magic) != 0) {
@@ -45,24 +25,55 @@ function parse(data) {
     var msg_type = stripCommand.toString('latin1');
     console.log('> msg_type:', msg_type, msg_type.length);
     if (msg_type) {
-        var block = fromBuffer(payload);
-        return block;
+        var utxo = fromBuffer(payload);
+        return utxo;
     } else {
         throw Error('command error:', msg_type);
     }
+}
+
+function UTXOState(){
+    this.link_no=0;
+    this.heights=[];
+    this.indexes=[];
+    this.txns=[];
+}
+
+function Txn(){
+    this.version=0;
+    this.tx_in=[];
+    this.tx_out=[];
+    this.lock_time=0;
+    this.sig_raw='';
+}
+
+function TxnIn(){
+    this.prev_output='';
+    this.sig_script='';
+    this.sequence=0;
+}
+
+function OutPoint(){
+    this.hash='';
+    this.index=0;
+}
+
+function TxnOut(){
+    this.value=0;
+    this.pk_script='';
 }
 
 const fromBuffer = (buffer) => {
 
     let offset = 0;
 
-    let replyHeaders = new ReplyHeaders();
+    let utxoState = new UTXOState();
 
-    replyHeaders.link_no = ftNumberI();
-    replyHeaders.heights = ftArrayI();
-    replyHeaders.txcks = ftArrayq();
-    replyHeaders.headers = headers();
-    return replyHeaders;
+    utxoState.link_no = ftNumberI();
+    utxoState.heights=ftArrayI();
+    utxoState.indexes=ftArrayI();
+    utxoState.txns=txns();
+    return utxoState;
 
     function ftArrayI() {
         var buf = readSlice(1);
@@ -75,6 +86,60 @@ const fromBuffer = (buffer) => {
             }
         }
         return heights;
+    }
+
+    function txns(){
+        var buf = readSlice(1);
+        var len = bufToNumber(buf);
+        var ts = [];
+        if(len<0xFD){
+            var t=new Txn();
+            t.version=ftNumberI();
+            t.tx_in=txIn();
+            t.tx_out=txOut();
+            t.lock_time=ftNumberI;
+            t.sig_raw=ftVarString();
+            ts.push(t);
+        }
+        return ts;
+    }
+
+    function txIn(){
+        var buf = readSlice(1);
+        var len = bufToNumber(buf);
+        var ins = [];
+        if (len < 0xFD) {
+            for (var i = 0; i < len; i++) {
+                var txnIn=new TxnIn();
+                txnIn.prev_output=outPoint();
+                txnIn.sig_script=ftVarString();
+                txnIn.sequence=ftNumberI();
+                ins.push(txnIn);
+            }
+        }
+        return ins;
+    }
+
+    function outPoint(){
+        var op=new OutPoint();
+        op.hash=ftBytes(32);
+        op.index=ftNumberI();
+        return op;
+    }
+
+    function txOut(){
+        var buf = readSlice(1);
+        var len = bufToNumber(buf);
+        var outs = [];
+        if (len < 0xFD) {
+            for (var i = 0; i < len; i++) {
+                var txout=new TxnOut();
+                txout.value=ftNumberq();
+                txout.pk_script=ftVarString();
+                outs.push(txout);
+            }
+        }
+        return outs;
     }
 
     function ftArrayq() {

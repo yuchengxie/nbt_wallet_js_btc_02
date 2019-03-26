@@ -4,6 +4,8 @@ const R = {
     Wallet_Import: 'wallet_import',
     Wallet_Info: 'wallet_info',
     Block: 'block',
+    UTXO: 'utxo',
+    Index:'utxo'
 }
 
 var navhome = document.getElementById('nav_home');
@@ -27,7 +29,7 @@ function tab(e) {
 }
 
 window.addEventListener('load', function () {
-    display(sessionStorage.getItem('currentUrl')||R.Block);
+    display(sessionStorage.getItem('currentUrl')||R.Index);
 })
 
 function display(url) {

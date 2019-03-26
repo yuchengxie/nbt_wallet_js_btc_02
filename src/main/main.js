@@ -2,6 +2,7 @@ const { ipcMain } = require('electron')
 let file = require('../utils/file')
 let infoparse = require('../parse/walletinfoparse');
 let blockparse=require('../parse/blockparse');
+let utxoparse=require('../parse/utxoparse');
 let http=require('http');
 
 ipcMain.on('save', function (event, data) {
@@ -82,7 +83,34 @@ ipcMain.on('info', function (event, data) {
     });
 })
 
+ipcMain.on('utxo',function(event,data){
+    // utxo(account, password, num, uock, address);
+    // var addr = file.readAccount(account, password);
+    // var uocks=5;
+    var URL = 'http://raw0.nb-chain.net/txn/state/uock?addr=1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV&num=5&uock2=[]'
+    http.get(URL, function (req, res) {
+        req.headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+        req.timeout = 30;
+        var arr = [];
+        req.on('data', function (chunk) {
+            arr.push(chunk);
+        });
+        req.on('end', function () {
+            var b = arr[0];
+            for (var i = 1; i < arr.length; i++) {
+                b0 = Buffer.concat(b0, arr[i]);
+            }
+            console.log('b:', b, b.length, b.toString('hex'));
+            var obj=utxoparse.parse(b);
+            console.log('obj:',obj);
+            event.sender.send('replyutxo',obj);
+        });
+    });
 
+    console.log(data);
+})
 
 /**
  * test

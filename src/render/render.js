@@ -83,7 +83,14 @@ window.onload = function () {
         nonce.innerText = 'nonce:' + data.headers[0].nonce;
         miner.innerText = 'miner:' + data.headers[0].miner;
         txn_count.innerText = 'txn_count:' + data.headers[0].txn_count;
+    })
 
+    var btn_utxo=getElement('frame_utxo','btn_utxo');
+    btn_utxo.onclick=function(){
+        ipcRenderer.send('utxo','utxo查询');
+    }
+    ipcRenderer.on('replyutxo',function(event,data){
+        console.log(data);
     })
 }
 
