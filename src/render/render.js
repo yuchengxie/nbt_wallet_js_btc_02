@@ -56,8 +56,11 @@ window.onload = function () {
     //block
     var btn_block=getElement('frame_block','btn_block');
     btn_block.onclick = function () {
-        ipcRenderer.send('test', '区块查询');
+        ipcRenderer.send('block', '区块查询');
     }
+    ipcRenderer.on('replyblock',function(event,data){
+        console.log('get data');
+    })
 }
 
 

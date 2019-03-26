@@ -1,6 +1,7 @@
 const { ipcMain } = require('electron')
 let file = require('../utils/file')
-let p = require('../parse/walletinfoparse');
+let infoparse = require('../parse/walletinfoparse');
+let blockparse=require('../parse/blockparse');
 let http=require('http');
 
 ipcMain.on('save', function (event, data) {
@@ -12,6 +13,37 @@ ipcMain.on('create', function (event, data) {
     if (addr) {
         event.sender.send('replycreate', addr);
     }
+})
+
+ipcMain.on('block',function(event,data){
+    var height=20299;
+    var hash='00...';
+    var URL = 'http://raw0.nb-chain.net/txn/state/block?&hash=0000000000000000000000000000000000000000000000000000000000000000&hi=20299'
+    
+    console.log('URL:', URL);
+    http.get(URL, function (req) {
+        req.headers = {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        }
+        req.timeout = 30;
+        var arr = [];
+        req.on('data', function (chunk) {
+            arr.push(chunk);
+        });
+        req.on('end', function () {
+            var b = arr[0];
+            for (var i = 1; i < arr.length; i++) {
+                b0 = Buffer.concat(b0, arr[i]);
+            }
+            console.log('b:', b, b.length, b.toString('hex'));
+            blockparse.parse(b);
+            // var obj=p.parse(b);
+            // console.log('obj:',obj);
+            event.sender.send('replyblock','111');
+        });
+    });
+
+
 })
 
 ipcMain.on('info', function (event, data) {
@@ -43,7 +75,7 @@ ipcMain.on('info', function (event, data) {
                 b0 = Buffer.concat(b0, arr[i]);
             }
             console.log('b:', b, b.length, b.toString('hex'));
-            var obj=p.parse(b);
+            var obj=infoparse.parse(b);
             console.log('obj:',obj);
             event.sender.send('replyinfo',obj);
         });
