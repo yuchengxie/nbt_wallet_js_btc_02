@@ -92,6 +92,20 @@ window.onload = function () {
     ipcRenderer.on('replyutxo',function(event,data){
         console.log(data);
     })
+
+
+    var addrfrom=getElement('frame_transfer','addrfrom')
+    var addrto=getElement('frame_transfer','addrto')
+    var t_value=getElement('frame_transfer','t_value')
+    var btn_txns=getElement('frame_transfer','btn_txns')
+    btn_txns.onclick=function(){
+        // var from=addrfrom.value;
+        // var to=addrfrom.value;
+        // var value=t_value.value;
+        // console.log('btn_txns');
+        // ipcRenderer.send('transfer')
+    }
+    
 }
 
 

@@ -87,7 +87,9 @@ ipcMain.on('utxo',function(event,data){
     // utxo(account, password, num, uock, address);
     // var addr = file.readAccount(account, password);
     // var uocks=5;
-    var URL = 'http://raw0.nb-chain.net/txn/state/uock?addr=1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV&num=5&uock2=[]'
+    // 1119AwBxBnRX3SdNM67EwPGb9CmSTUcP3qk7hhNVUuSGdXJGLjEnis
+    // 1118Mi5XxqmqTBp7TnPQd1Hk9XYagJQpDcZu6EiGE1VbXHAw9iZGPV
+    var URL = 'http://raw0.nb-chain.net/txn/state/uock?addr=1119AwBxBnRX3SdNM67EwPGb9CmSTUcP3qk7hhNVUuSGdXJGLjEnis&num=5&uock2=[]'
     http.get(URL, function (req, res) {
         req.headers = {
             'Content-Type': 'application/x-www-form-urlencoded',

@@ -5,8 +5,10 @@ const R = {
     Wallet_Info: 'wallet_info',
     Block: 'block',
     UTXO: 'utxo',
-    Index:'utxo'
+    Transfer:'transfer',
 }
+
+const Index=R.Transfer;
 
 var navhome = document.getElementById('nav_home');
 var navwallet = document.getElementById('nav_wallet_create');
@@ -24,19 +26,19 @@ function tab(e) {
     }else{
         throw Error('url error');
     }
+    console.log('url:',url);
     sessionStorage.setItem('currentUrl',url);
     display(url);
 }
 
 window.addEventListener('load', function () {
-    display(sessionStorage.getItem('currentUrl')||R.Index);
+    display(sessionStorage.getItem('currentUrl')|| Index);
 })
 
 function display(url) {
     var eles = document.getElementById('content').children;
     for (var i = 0; i < eles.length; i++) {
         var e = eles[i];
-        
         if (url != e.getAttribute('id')) {
             e.classList.remove('active');
         } else {
