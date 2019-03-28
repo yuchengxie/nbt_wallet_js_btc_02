@@ -1,6 +1,7 @@
 const _BASE58_CHAR = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz'
 const _TX_TRANSFER_MAX = 1000000000000     //10000 NBC
 const WEB_SERVER_ADDR = 'http://raw0.nb-chain.net'
+const fs = require('fs');
 
 var sequence = 0
 
@@ -42,7 +43,7 @@ function verify(addr) {
 }
 
 // f96e62746d616b657368656574000000
-var hexStr = 'a5000000e8d6839d00000100000001000000000000000036313131384d69355878716d7154427037546e50516431486b39585961674a517044635a7536456947453156625848417739695a4750560100e1f50500000000363131313941774278426e52583353644e4d3637457750476239436d535455635033716b3768684e565575534764584a474c6a456e697300000000000000000000000000000000000000000000010000000000000000';
+var hexStr = 'f96e62746d616b657368656574000000a5000000e8d6839d00000100000001000000000000000036313131384d69355878716d7154427037546e50516431486b39585961674a517044635a7536456947453156625848417739695a4750560100e1f50500000000363131313941774278426e52583353644e4d3637457750476239436d535455635033716b3768684e565575534764584a474c6a456e697300000000000000000000000000000000000000000000010000000000000000';
 
 // function hexstrToBuf(hexStr){
 //     var arr=[];
@@ -87,6 +88,7 @@ function prepare_txn1_(pay_to, ext_in, scan_count, min_utxo, max_utxo, sort_flag
 
     var makesheet = new MakeSheet();
     makesheet.vcn = 0;
+    makesheet.sequence = 1;
     makesheet.pay_from = pay_from;
     makesheet.pay_to = pay_to;
     makesheet.scan_count = scan_count;
@@ -98,31 +100,193 @@ function prepare_txn1_(pay_to, ext_in, scan_count, min_utxo, max_utxo, sort_flag
     submit_txn_(makesheet, true);
 }
 
-var command = 'makesheet';
+var command_type = 'makesheet';
+var magic = Buffer.from([0xf9, 0x6e, 0x62, 0x74]);
+
+function ttt(filename, buf) {
+    var s = '';
+    for (var i = 0; i < buf.length; i++) {
+        var b = buf[i].toString(16);
+        if (b.length === 1) {
+            s += '0' + b + '\n';
+        } else {
+            s += b + '\n';
+        }
+    }
+
+    fs.writeFile(filename + '.txt', s, function (err) {
+        if (err) console.log(err);
+        else {
+            console.log(filename + '写入成功');
+        }
+    })
+}
 
 function submit_txn_(msg, submit) {
     var pythonbuf = toBuffer(hexStr);
-    console.log('>>> pythonbuf:', pythonbuf, pythonbuf.length);
+    console.log('>>> a:', pythonbuf, pythonbuf.length);
+
+    ttt('a', pythonbuf);
+
     console.log('=========================================================================================')
     // 6d 61 6b 65 73 68 65 65 74 00 00 00
-    var b_command = Buffer.allocUnsafe(12);
-    b_command.write(command);
-    console.log('>>> b_command:', b_command);
-    // console.log('>>> msg:',msg);
-    //转二进制
-    const b_magic = Buffer.from([0xf9, 0x6e, 0x62, 0x74]);
-    console.log('>>> magic:', b_magic);
-    var h=Buffer.concat([b_magic,b_command]);
-    console.log('>>> h:', h,h.length);
+    var command = Buffer.allocUnsafe(12);
+    command.write(command_type);
+    // console.log('>>> command:', command);
 
-    for (var name in msg) {
-        // console.log(name,msg[name]);
-    }
-    var a = DFtNumberH();
+    //转二进制
+    const magic = Buffer.from([0xf9, 0x6e, 0x62, 0x74]);
+    // console.log('>>> magic:', magic);
+    var other = new Buffer(8);
+    // console.log('other:', other);
+    var h = Buffer.concat([magic, command, other]);
+    console.log('>>> h:', h, h.length);
+    // console.log('>>> msg:', msg);
+    var payload = convpayload(msg, h);
+    var b = Buffer.concat([h, payload]);
+    console.log('b', b, b.length);
+    ttt('b', b);
 }
 
-function strToBuf(str) {
+//优化 todo
+const compayload = (str) => {
+    var a = new Buffer(0);
+    var b;
 
+    function dftNumberH(n) {
+        b = new Buffer(2);
+        b.writeUInt8(n)
+        a = Buffer.concat([a, b]);
+    }
+
+    function dftNumberI(n) {
+        b = new Buffer(4);
+        b.writeUInt16LE(n);
+        a = Buffer.concat([a, b]);
+    }
+
+    function dftNumberq(n) {
+        b = new Buffer(8);
+        b.writeInt32LE(n);
+        a = Buffer.concat([a, b]);
+    }
+
+}
+
+function convpayload(msg, h) {
+
+    var a = new Buffer(0);
+    var b;
+    for (var name in msg) {
+        if (name === 'vcn') {
+            b = new Buffer(2);
+            b.writeUInt8(msg['vcn'])
+            a = Buffer.concat([a, b]);
+        }
+        if (name === 'sequence') {
+            b = new Buffer(4);
+            b.writeUInt16LE(msg['sequence'])
+            a = Buffer.concat([a, b]);
+
+            console.log('>>> b:', b, b.length);
+            console.log('>>> a:', a, a.length);
+        }
+        if (name === 'pay_from') {
+            var num = msg['pay_from'].length;
+            console.log('>>> pay_from len', num);
+            if (num < 0XFD) {
+                b = new Buffer(1);
+                b.writeUInt8(1);
+                a = Buffer.concat([a, b]);
+                for (var i = 0; i < num; i++) {
+                    var payfrom = msg['pay_from'][i];
+                    b = new Buffer(8);
+
+                    var v = payfrom.value;
+                    b.writeInt32LE(v);
+                    var addr = payfrom.address;
+                    a = Buffer.concat([a, b]);
+                    var l_addr = payfrom.address.length;
+                    if (l_addr < 0xFD) {
+                        b = new Buffer(1);
+                        b.writeInt8(l_addr);
+                        a = Buffer.concat([a, b]);
+
+                        b = new Buffer(payfrom.address);
+                        a = Buffer.concat([a, b]);
+                        // console.log('>>> b:', b, b.length);
+                    }
+                }
+            }
+        }
+
+        if (name === 'pay_to') {
+            var num = msg['pay_to'].length;
+            console.log('>>> pay_to len', num);
+            if (num < 0XFD) {
+                b = new Buffer(1);
+                b.writeUInt8(1);
+                a = Buffer.concat([a, b]);
+                for (var i = 0; i < num; i++) {
+                    var payto = msg['pay_to'][i];
+                    b = new Buffer(8);
+
+                    var v = payto.value;
+                    b.writeInt32LE(v);
+                    a = Buffer.concat([a, b]);
+                    var l_addr = payto.address.length;
+                    if (l_addr < 0xFD) {
+                        b = new Buffer(1);
+                        b.writeInt8(l_addr);
+                        a = Buffer.concat([a, b]);
+
+                        b = new Buffer(payto.address);
+                        a = Buffer.concat([a, b]);
+                    }
+                }
+            }
+        }
+
+        if (name === 'scan_count') {
+            b = new Buffer(2);
+            b.writeUInt8(msg['vcn'])
+            a = Buffer.concat([a, b]);
+        }
+
+        if (name === 'min_utxo') {
+            b = new Buffer(8);
+            b.writeInt32LE(msg['min_utxo'])
+            a = Buffer.concat([a, b]);
+        }
+
+        if (name === 'max_utxo') {
+            b = new Buffer(8);
+            b.writeInt32LE(msg['max_utxo'])
+            a = Buffer.concat([a, b]);
+        }
+
+        if (name === 'sort_flag') {
+            b = new Buffer(4);
+            b.writeUInt16LE(msg['sort_flag'])
+            a = Buffer.concat([a, b]);
+        }
+
+        if (name === 'last_uocks') {
+            var num = msg['last_uocks'].length;
+            if (num < 0xFD) {
+                b = new Buffer(1);
+                b.writeInt8(num);
+                a = Buffer.concat([a, b]);
+                for (var i = 0; i < num; i++) {
+                    var lastuocks = msg['last_uocks'][i];
+                    b = new Buffer(8);
+                    b.writeInt32LE(lastuocks);
+                    a = Buffer.concat([a, b]);
+                }
+            }
+        }
+    }
+    return a;
 }
 
 function toBuffer(hex) {
@@ -132,11 +296,6 @@ function toBuffer(hex) {
     var buffer = typedArray.buffer
     buffer = Buffer.from(buffer);
     return buffer;
-}
-
-function DFtNumberH() {
-    var buf = new Buffer(2);
-    buf.writeInt8(0, 0);
 }
 
 var pay_to = '', from_uocks = '';
