@@ -2,11 +2,14 @@ const _BASE58_CHAR = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
 const _TX_TRANSFER_MAX = 1000000000000     //10000 NBC
 const WEB_SERVER_ADDR = 'http://raw0.nb-chain.net'
 const fs = require('fs');
+const sha256 = require('js-sha256')
+
 
 var sequence = 0
 
 function PayFrom() {
     this.value = 0;
+    this.address = '';
     this.address = '';
 }
 
@@ -63,8 +66,7 @@ function query_sheet(pay_to, from_uocks) {
     var max_utxo = 0;
     var sort_flag = 0;
     var from_uocks = null;
-
-    prepare_txn1_(pay_to, ext_in, scan_count, min_utxo, max_utxo, sort_flag, from_uocks);
+    return prepare_txn1_(pay_to, ext_in, scan_count, min_utxo, max_utxo, sort_flag, from_uocks);
 }
 
 function prepare_txn1_(pay_to, ext_in, scan_count, min_utxo, max_utxo, sort_flag, from_uocks) {
@@ -97,7 +99,7 @@ function prepare_txn1_(pay_to, ext_in, scan_count, min_utxo, max_utxo, sort_flag
     makesheet.sort_flag = sort_flag;
     // makesheet.from_uocks=from_uocks;
     makesheet.last_uocks = [0];
-    submit_txn_(makesheet, true);
+    return submit_txn_(makesheet, true);
 }
 
 var command_type = 'makesheet';
@@ -121,37 +123,120 @@ function ttt(filename, buf) {
         }
     })
 }
+// var pythonbuf = toBuffer(hexStr);
+// console.log('>>> a:', pythonbuf, pythonbuf.length);
 
+// ttt('a', pythonbuf);
 function submit_txn_(msg, submit) {
-    var pythonbuf = toBuffer(hexStr);
-    console.log('>>> a:', pythonbuf, pythonbuf.length);
-
-    ttt('a', pythonbuf);
-
-    console.log('=========================================================================================')
-    // 6d 61 6b 65 73 68 65 65 74 00 00 00
-    var command = Buffer.allocUnsafe(12);
-    command.write(command_type);
-    // console.log('>>> command:', command);
-
-    //转二进制
+    //0-4
     const magic = Buffer.from([0xf9, 0x6e, 0x62, 0x74]);
-    // console.log('>>> magic:', magic);
-    var other = new Buffer(8);
-    // console.log('other:', other);
-    var h = Buffer.concat([magic, command, other]);
-    console.log('>>> h:', h, h.length);
-    // console.log('>>> msg:', msg);
-    var payload = convpayload(msg, h);
-    var b = Buffer.concat([h, payload]);
-    console.log('b', b, b.length);
-    ttt('b', b);
+    //4-16
+    var command = new Buffer(12);
+    command.write('makesheet', 0);
+    console.log('>>> command:', command);
+    //24-
+    // var payload = convpayload(msg);
+    var payload = compayload(msg);
+    console.log('=======>', command.toString());
+    //16-20 payload lenght
+    var len_buf = new Buffer(4);
+    var len = payload.length;
+    len_buf.writeInt16LE(len);
+    //20-24 checksum
+    var checksum = toBuffer(sha256(toBuffer(sha256(payload)))).slice(0, 4);
+
+    var b = Buffer.concat([magic, command, len_buf, checksum, payload]);
+
+    ttt('c',b);
+
+    return b;
 }
 
 //优化 todo
-const compayload = (str) => {
+const compayload = (msg) => {
     var a = new Buffer(0);
     var b;
+
+    for (var name in msg) {
+        if (name === 'vcn') {
+            dftNumberH(msg['vcn']);
+        } else if (name === 'sequence') {
+            dftNumberI(msg['sequence']);
+        } else if (name === 'pay_from') {
+            dftArrayPayfrom();
+        } else if (name === 'pay_to') {
+            dftArrayPayto();
+        } else if (name === 'scan_count') {
+            dftNumberH(msg['scan_count']);
+        } else if (name === 'min_utxo') {
+            dftNumberq(msg['min_utxo']);
+        }
+        else if (name === 'max_utxo') {
+            dftNumberq(msg['max_utxo']);
+        }
+        else if (name === 'sort_flag') {
+            dftNumberI(msg['sort_flag']);
+        } else if (name === 'last_uocks') {
+            dftArraylastuocks();
+        }
+    }
+
+    function dftArraylastuocks() {
+        var num = msg['last_uocks'].length;
+        if (num < 0xFD) {
+            dftNumber1(num);
+            for (var i = 0; i < num; i++) {
+                var lastuocks = msg['last_uocks'][i];
+                dftNumberq(lastuocks);
+            }
+        }
+    }
+
+    function dftArrayPayfrom() {
+        var num = msg['pay_from'].length;
+        if (num < 0XFD) {
+            dftNumber1(num);
+            for (var i = 0; i < num; i++) {
+                var pay = msg['pay_from'][i];
+                var v = pay.value;
+                dftNumberq(v);
+                var l_addr = pay.address.length;
+                // 变长字符串
+                if (l_addr < 0xFD) {
+                    dftNumber1(l_addr);
+                    b = new Buffer(pay.address);
+                    a = Buffer.concat([a, b]);
+                }
+            }
+        }
+    }
+
+    function dftArrayPayto() {
+        var num = msg['pay_to'].length;
+        if (num < 0XFD) {
+            dftNumber1(num);
+            for (var i = 0; i < num; i++) {
+                var pay = msg['pay_to'][i];
+                var v = pay.value;
+                dftNumberq(v);
+                var l_addr = pay.address.length;
+                // 变长字符串
+                if (l_addr < 0xFD) {
+                    dftNumber1(l_addr);
+                    b = new Buffer(pay.address);
+                    a = Buffer.concat([a, b]);
+                }
+            }
+        }
+    }
+
+
+    function dftNumber1(n) {
+        b = new Buffer(1);
+        b.writeUInt8(n);
+        a = Buffer.concat([a, b]);
+    }
+
 
     function dftNumberH(n) {
         b = new Buffer(2);
@@ -171,121 +256,6 @@ const compayload = (str) => {
         a = Buffer.concat([a, b]);
     }
 
-}
-
-function convpayload(msg, h) {
-
-    var a = new Buffer(0);
-    var b;
-    for (var name in msg) {
-        if (name === 'vcn') {
-            b = new Buffer(2);
-            b.writeUInt8(msg['vcn'])
-            a = Buffer.concat([a, b]);
-        }
-        if (name === 'sequence') {
-            b = new Buffer(4);
-            b.writeUInt16LE(msg['sequence'])
-            a = Buffer.concat([a, b]);
-
-            console.log('>>> b:', b, b.length);
-            console.log('>>> a:', a, a.length);
-        }
-        if (name === 'pay_from') {
-            var num = msg['pay_from'].length;
-            console.log('>>> pay_from len', num);
-            if (num < 0XFD) {
-                b = new Buffer(1);
-                b.writeUInt8(1);
-                a = Buffer.concat([a, b]);
-                for (var i = 0; i < num; i++) {
-                    var payfrom = msg['pay_from'][i];
-                    b = new Buffer(8);
-
-                    var v = payfrom.value;
-                    b.writeInt32LE(v);
-                    var addr = payfrom.address;
-                    a = Buffer.concat([a, b]);
-                    var l_addr = payfrom.address.length;
-                    if (l_addr < 0xFD) {
-                        b = new Buffer(1);
-                        b.writeInt8(l_addr);
-                        a = Buffer.concat([a, b]);
-
-                        b = new Buffer(payfrom.address);
-                        a = Buffer.concat([a, b]);
-                        // console.log('>>> b:', b, b.length);
-                    }
-                }
-            }
-        }
-
-        if (name === 'pay_to') {
-            var num = msg['pay_to'].length;
-            console.log('>>> pay_to len', num);
-            if (num < 0XFD) {
-                b = new Buffer(1);
-                b.writeUInt8(1);
-                a = Buffer.concat([a, b]);
-                for (var i = 0; i < num; i++) {
-                    var payto = msg['pay_to'][i];
-                    b = new Buffer(8);
-
-                    var v = payto.value;
-                    b.writeInt32LE(v);
-                    a = Buffer.concat([a, b]);
-                    var l_addr = payto.address.length;
-                    if (l_addr < 0xFD) {
-                        b = new Buffer(1);
-                        b.writeInt8(l_addr);
-                        a = Buffer.concat([a, b]);
-
-                        b = new Buffer(payto.address);
-                        a = Buffer.concat([a, b]);
-                    }
-                }
-            }
-        }
-
-        if (name === 'scan_count') {
-            b = new Buffer(2);
-            b.writeUInt8(msg['vcn'])
-            a = Buffer.concat([a, b]);
-        }
-
-        if (name === 'min_utxo') {
-            b = new Buffer(8);
-            b.writeInt32LE(msg['min_utxo'])
-            a = Buffer.concat([a, b]);
-        }
-
-        if (name === 'max_utxo') {
-            b = new Buffer(8);
-            b.writeInt32LE(msg['max_utxo'])
-            a = Buffer.concat([a, b]);
-        }
-
-        if (name === 'sort_flag') {
-            b = new Buffer(4);
-            b.writeUInt16LE(msg['sort_flag'])
-            a = Buffer.concat([a, b]);
-        }
-
-        if (name === 'last_uocks') {
-            var num = msg['last_uocks'].length;
-            if (num < 0xFD) {
-                b = new Buffer(1);
-                b.writeInt8(num);
-                a = Buffer.concat([a, b]);
-                for (var i = 0; i < num; i++) {
-                    var lastuocks = msg['last_uocks'][i];
-                    b = new Buffer(8);
-                    b.writeInt32LE(lastuocks);
-                    a = Buffer.concat([a, b]);
-                }
-            }
-        }
-    }
     return a;
 }
 
@@ -299,7 +269,25 @@ function toBuffer(hex) {
 }
 
 var pay_to = '', from_uocks = '';
-query_sheet(pay_to, from_uocks)
+
+var buf = query_sheet(pay_to, from_uocks)
+
+console.log('buf:', buf, buf.length);
+
+const axios = require('axios')
+
+var URL = 'http://raw0.nb-chain.net/txn/sheets/sheet';
+
+axios.post(URL, buf, {
+    headers: {
+        'Content-Type': 'application/octet-stream',//数据格式为二进制数据流
+    },
+}).then(res => {
+    var data = res.data;
+    console.log(data);
+    var buf = new Buffer(data);
+    console.log('> buf:', buf, buf.length);
+})
 
 module.exports = {
     verify, query_sheet
