@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const fu = require('./fileutils');
 const secret = require('./secret')
+const aes=require('./aes');
+var bs58check = require('bs58check')
 
 let default_fp = path.join(__dirname, '../../data/');
 let fp = path.join(__dirname, '../../data/account/');
@@ -83,6 +85,32 @@ function readAccount(account, password) {
     return addr;
 }
 
+function Wallet(){
+    this.encrypted=true;
+    this.type='default';
+    this.vcn=0;
+    this.coin_type=0x00;
+    this.testnet=false;
+    this.prvkey='';
+    this.pubkey='';
+}
+
+function getwallet(){
+    var filename=fp+'addr1.cfg';
+    const data = fs.readFileSync(filename, "utf-8");
+    let datajson = JSON.parse(data);
+    var prvkey=datajson['prvkey'];
+    var s=aes.Decrypt(prvkey,'xieyc');
+    s=s.slice(2);
+    var n=bs58check.decode(s);
+    console.log('n:',n,n.length);
+    var prvKeyBuf=n.slice(1,33);
+    var wallet=new Wallet();
+    wallet.pubkey=secret.getPubKey(prvKeyBuf);
+    wallet.prvkey=prvKeyBuf;
+    return wallet;
+}
+
 function loadFromFile(filename, passphrase) {
     let addr = '';
     try {
@@ -101,9 +129,9 @@ function loadFromFile(filename, passphrase) {
     return addr;
 }
 
-
 module.exports.readAccount = readAccount;
 module.exports.loadFromFile = loadFromFile;
 module.exports.saveToFile = saveToFile;
 module.exports.create = create;
 module.exports.save = save;
+module.exports.getwallet=getwallet;

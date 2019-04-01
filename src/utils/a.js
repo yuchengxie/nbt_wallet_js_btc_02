@@ -8,6 +8,7 @@ var URL = 'http://raw0.nb-chain.net/txn/sheets/sheet';
 let dhttp = require('dhttp')
 var Buffer = require('safe-buffer').Buffer
 const bs58 = require('bs58')
+const file=require('./file')
 
 var format = require('../parse/format').Format
 var messages = require('../parse/messages')
@@ -324,17 +325,13 @@ dhttp({
     url: URL,
     body: buf
 }, function (err, res) {
-    // console.log('res:', res.body, res.body.length);
-    var hexbuf = bufToStr(res.body)
-    // console.log('res:', hexbuf, hexbuf.length);
-    // ttt('res_node', res.body);
-
+    if (err) throw err;
+    
     txnparse(res.body)
-
-    d = {};
+    var d = {};
     var payto = makesheet.pay_to
     for (var i = 0; i < payto.length; i++) {
-        p = payto[i];
+        var p = payto[i];
         if (p.value != 0 || p.address.slice(0, 1) != 0x6a) {
             var ret = decode_check(p.address);
             d[ret] = p.value;
@@ -352,8 +349,10 @@ dhttp({
     var pks_out0=orgsheetMsg.pks_out[0].items;
     var pks_num=pks_out0.length;
     var tx_ins2=[];
-    // var pub_key=
-    console.log('pks_out0:',pks_out0);
+    var wallet=file.getwallet();
+    console.log('wallet:',wallet);
+    // console.log('pub_key:',pub_key,pub_key.length);
+    // console.log('pks_out0:',pks_out0);
 
 })
 

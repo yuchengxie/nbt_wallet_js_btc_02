@@ -6,20 +6,28 @@ const ripemd160 = require('ripemd160');
 const wif = require('wif');
 const AES = require('./aes')
 
-const key='xieyc';
+const key = 'xieyc';
 
 function saveWallet(prvKeyStr) {
     if (prvKeyStr.length != 64) throw Error('长度须为64');
     let prvKeyBuf = toBuffer(prvKeyStr);
+    console.log('prvKeyBuf', prvKeyBuf, prvKeyBuf.length);
     let BIP32 = bip32.fromPrivateKey(prvKeyBuf, new Buffer(32));
+    console.log('BIP32:', BIP32);
     let keyWIF = toWIF(prvKeyStr);
     console.log('> keyWIF:', keyWIF, keyWIF.length);
     //加密私钥
-    let encrypt_prvKey=AES.Encrypt(keyWIF,key);
-    console.log('save encrypt_prvKey',encrypt_prvKey,encrypt_prvKey.length);
+    let encrypt_prvKey = AES.Encrypt(keyWIF, key);
+    console.log('save encrypt_prvKey', encrypt_prvKey, encrypt_prvKey.length);
     //生成NBC地址
     genAddr(BIP32);
     return encrypt_prvKey;
+}
+
+
+function getPubKey(prvKeyBuf) {
+    let BIP32 = bip32.fromPrivateKey(prvKeyBuf, new Buffer(32));
+    return BIP32.publicKey;
 }
 
 function createWallet(str) {
@@ -33,16 +41,16 @@ function createWallet(str) {
     let keyWIF = toWIF(prvKeyStr);
     console.log('> keyWIF:', keyWIF, keyWIF.length);
     //给私钥作AES加密
-    let encrypt_prvKey = AES.Encrypt(keyWIF,key);
+    let encrypt_prvKey = AES.Encrypt(keyWIF, key);
     // let encrypt_prvKey = AES.Encrypt(keyWIF,key);
     console.log("> encrypt_prvKey:", encrypt_prvKey, encrypt_prvKey.length);
-    let decrypt_prvKey = AES.Decrypt(encrypt_prvKey,key);
+    let decrypt_prvKey = AES.Decrypt(encrypt_prvKey, key);
     console.log("> decrypt_prvKey:", decrypt_prvKey, decrypt_prvKey.length);
     //生成NBC地址
-    let addr=genAddr(BIP32);
-    let data={
-        encrypt_prvKey:encrypt_prvKey,
-        addr:addr
+    let addr = genAddr(BIP32);
+    let data = {
+        encrypt_prvKey: encrypt_prvKey,
+        addr: addr
     }
     return data;
 }
@@ -67,7 +75,7 @@ function genAddr(BIP32) {
     let checksum = toBuffer(sha256(d1buf)).slice(0, 4);
     let result = Buffer.concat([v, checksum]);
     let addr = bs58.encode(result);
-    console.log('>>> addr:',addr);
+    console.log('>>> addr:', addr);
     return addr;
 }
 
@@ -86,13 +94,13 @@ function toWIF(privateKeyStr) {
 function genAddrFromCfg(cfg, passphrase) {
     let prvkey = cfg['prvkey'];
     if (prvkey) {
-        if (cfg['encrypted']){
-            prvkey=AES.Decrypt(prvkey,passphrase);
-            prvkey=prvkey.substring(2,prvkey.length);
-            prvkey=bs58.decode(prvkey);
-            prvkey=prvkey.slice(1,33);
-            let BIP32=bip32.fromPrivateKey(prvkey,new Buffer(32));
-            var addr= genAddr(BIP32);
+        if (cfg['encrypted']) {
+            prvkey = AES.Decrypt(prvkey, passphrase);
+            prvkey = prvkey.substring(2, prvkey.length);
+            prvkey = bs58.decode(prvkey);
+            prvkey = prvkey.slice(1, 33);
+            let BIP32 = bip32.fromPrivateKey(prvkey, new Buffer(32));
+            var addr = genAddr(BIP32);
             return addr;
         }
     }
@@ -122,4 +130,5 @@ function toBuffer(hex) {
 
 exports.saveWallet = saveWallet
 exports.createWallet = createWallet
+exports.getPubKey = getPubKey
 exports.genAddrFromCfg = genAddrFromCfg
