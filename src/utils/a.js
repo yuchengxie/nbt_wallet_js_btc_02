@@ -3,9 +3,35 @@ const _TX_TRANSFER_MAX = 1000000000000     //10000 NBC
 const WEB_SERVER_ADDR = 'http://raw0.nb-chain.net'
 const fs = require('fs');
 const sha256 = require('js-sha256')
+const axios = require('axios')
+var URL = 'http://raw0.nb-chain.net/txn/sheets/sheet';
+let dhttp = require('dhttp')
+var Buffer = require('safe-buffer').Buffer
+const bs58 = require('bs58')
 
+var format = require('../parse/format').Format
+var messages = require('../parse/messages')
 
-var sequence = 0
+var command_type = 'makesheet';
+var magic = Buffer.from([0xf9, 0x6e, 0x62, 0x74]);
+var sequence = 0;
+var makesheet;
+var orgsheetMsg;
+
+function OrgSheet() {
+    this.sequence = 0;
+    this.pks_out = [];
+    this.last_uocks = [];
+    this.version = 0;
+    this.tx_in = [];
+    this.tx_out = [];
+    this.lock_time = 0;
+    this.signature = '';
+}
+
+function VarStrList() {
+    this.items = [];
+}
 
 function PayFrom() {
     this.value = 0;
@@ -45,18 +71,32 @@ function verify(addr) {
     return true;
 }
 
+function Txn() {
+    this.version = 0;
+    this.tx_in = [];
+    this.tx_out = [];
+    this.lock_time = 0;
+    this.sig_raw = '';
+}
+
+function TxnIn() {
+    this.prev_output = '';
+    this.sig_script = '';
+    this.sequence = 0;
+}
+
+function OutPoint() {
+    this.hash = '';
+    this.index = 0;
+}
+
+function TxnOut() {
+    this.value = 0;
+    this.pk_script = '';
+}
+
 // f96e62746d616b657368656574000000
 var hexStr = 'f96e62746d616b657368656574000000a5000000e8d6839d00000100000001000000000000000036313131384d69355878716d7154427037546e50516431486b39585961674a517044635a7536456947453156625848417739695a4750560100e1f50500000000363131313941774278426e52583353644e4d3637457750476239436d535455635033716b3768684e565575534764584a474c6a456e697300000000000000000000000000000000000000000000010000000000000000';
-
-// function hexstrToBuf(hexStr){
-//     var arr=[];
-//     for(var i=0;i<hexStr.length/2;i++){
-//         var a=hexStr[2*i]+hexStr[2*1+1]
-//         arr.push(a);
-//     }
-//     var b=Buffer.from(arr);
-//     return b;
-// }
 
 function query_sheet(pay_to, from_uocks) {
     var ext_in = null;
@@ -88,9 +128,9 @@ function prepare_txn1_(pay_to, ext_in, scan_count, min_utxo, max_utxo, sort_flag
     pay_to.push(pay_to1);
 
 
-    var makesheet = new MakeSheet();
+    makesheet = new MakeSheet();
     makesheet.vcn = 0;
-    makesheet.sequence = 1;
+    makesheet.sequence = sequence;
     makesheet.pay_from = pay_from;
     makesheet.pay_to = pay_to;
     makesheet.scan_count = scan_count;
@@ -101,9 +141,6 @@ function prepare_txn1_(pay_to, ext_in, scan_count, min_utxo, max_utxo, sort_flag
     makesheet.last_uocks = [0];
     return submit_txn_(makesheet, true);
 }
-
-var command_type = 'makesheet';
-var magic = Buffer.from([0xf9, 0x6e, 0x62, 0x74]);
 
 function ttt(filename, buf) {
     var s = '';
@@ -119,25 +156,36 @@ function ttt(filename, buf) {
     fs.writeFile(filename + '.txt', s, function (err) {
         if (err) console.log(err);
         else {
-            console.log(filename + '写入成功');
+            // console.log(filename + '写入成功');
+        }
+    })
+
+    var hexStr = 'f96e62746f72677368656574000000003c010000c8e6ee530100000001012876b8230000db83cf42e02199d4fa29d14a197a167ade519298f0c2f98ec5478092497bcd5c00b7ac010100100000636900010000000191706ece9b800e5498c8ab429677d71f6bad60aa56929b2cc9b2cd6ecce5771f010000006e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ffffffff0200e1f505000000002876b8230000f3cf4ba110b50dc1b165d6e93c05ea4a7c35e5d2e8d736cf10955d5c33d7ea0f00b7ac74b4c4da0a0000002876b8230000db83cf42e02199d4fa29d14a197a167ade519298f0c2f98ec5478092497bcd5c00b7ac0000000000'
+    var s = '';
+    for (var i = 0; i < hexStr.length / 2; i++) {
+        var tmp = hexStr[2 * i] + hexStr[2 * i + 1];
+        s += tmp + '\n';
+    }
+    fs.writeFile('res_python.txt', s, function (err) {
+
+        if (err) console.log(err);
+        else {
+            console.log('python.txt' + '写入成功');
         }
     })
 }
-// var pythonbuf = toBuffer(hexStr);
-// console.log('>>> a:', pythonbuf, pythonbuf.length);
 
-// ttt('a', pythonbuf);
 function submit_txn_(msg, submit) {
     //0-4
     const magic = Buffer.from([0xf9, 0x6e, 0x62, 0x74]);
     //4-16
     var command = new Buffer(12);
     command.write('makesheet', 0);
-    console.log('>>> command:', command);
+    // console.log('>>> command:', command);
     //24-
     // var payload = convpayload(msg);
     var payload = compayload(msg);
-    console.log('=======>', command.toString());
+    // console.log('=======>', command.toString());
     //16-20 payload lenght
     var len_buf = new Buffer(4);
     var len = payload.length;
@@ -147,12 +195,12 @@ function submit_txn_(msg, submit) {
 
     var b = Buffer.concat([magic, command, len_buf, checksum, payload]);
 
-    ttt('c',b);
+    // ttt('node', b);
 
     return b;
 }
 
-//优化 todo
+//数据组包
 const compayload = (msg) => {
     var a = new Buffer(0);
     var b;
@@ -237,7 +285,6 @@ const compayload = (msg) => {
         a = Buffer.concat([a, b]);
     }
 
-
     function dftNumberH(n) {
         b = new Buffer(2);
         b.writeUInt8(n)
@@ -255,7 +302,6 @@ const compayload = (msg) => {
         b.writeInt32LE(n);
         a = Buffer.concat([a, b]);
     }
-
     return a;
 }
 
@@ -271,23 +317,270 @@ function toBuffer(hex) {
 var pay_to = '', from_uocks = '';
 
 var buf = query_sheet(pay_to, from_uocks)
+// console.log('发送buf:', buf, buf.length);
 
-console.log('buf:', buf, buf.length);
+dhttp({
+    method: 'POST',
+    url: URL,
+    body: buf
+}, function (err, res) {
+    // console.log('res:', res.body, res.body.length);
+    var hexbuf = bufToStr(res.body)
+    // console.log('res:', hexbuf, hexbuf.length);
+    // ttt('res_node', res.body);
 
-const axios = require('axios')
+    txnparse(res.body)
 
-var URL = 'http://raw0.nb-chain.net/txn/sheets/sheet';
+    d = {};
+    var payto = makesheet.pay_to
+    for (var i = 0; i < payto.length; i++) {
+        p = payto[i];
+        if (p.value != 0 || p.address.slice(0, 1) != 0x6a) {
+            var ret = decode_check(p.address);
+            d[ret] = p.value;
+        }
+    }
+    // var tx_out = orgsheetMsg.tx_out;
+    // console.log('>>> tx_out:', tx_out);
+    // for (var i = 0; i < tx_out.length; i++) {
+    //     var item = tx_out[i];
+    //     if (item.value === 0 && item.pk_script.slice(0, 2) == '6a') {
+    //         continue;
+    //     }
+    // }
 
-axios.post(URL, buf, {
-    headers: {
-        'Content-Type': 'application/octet-stream',//数据格式为二进制数据流
-    },
-}).then(res => {
-    var data = res.data;
-    console.log(data);
-    var buf = new Buffer(data);
-    console.log('> buf:', buf, buf.length);
+    var pks_out0=orgsheetMsg.pks_out[0].items;
+    var pks_num=pks_out0.length;
+    var tx_ins2=[];
+    // var pub_key=
+    console.log('pks_out0:',pks_out0);
+
 })
+
+function decode_check(v) {
+    var a = bs58.decode(v);
+    var ret = a.slice(0, a.length - 4);
+    var check = a.slice(a.length - 4);
+    var checksum = toBuffer(sha256(toBuffer(sha256(ret))));
+    // console.log('ret:', ret, ret.length)
+    // console.log('check', check, check.length);
+    // console.log('checksum:', checksum.slice(0, 4))
+    if (checksum.compare(check) == 1) {
+        // console.log('ret:', ret, ret.length)
+        return ret.slice(1);
+    }
+}
+
+function txnparse(buf) {
+    if (buf.slice(0, 4).compare(magic) != 0) {
+        throw Error('bad magic number');
+    }
+    var len = buf.slice(16, 20).readUInt16LE();
+    console.log('len buffer:', buf.slice(16, 20), len);
+    var payload = buf.slice(24, 24 + len);
+
+    var checksum = toBuffer(sha256(toBuffer(sha256(payload)))).slice(0, 4);
+    if (buf.slice(20, 24).compare(checksum) != 0) {
+        throw Error('checksum error');
+    }
+
+    var command = strip(buf.slice(4, 16)).toString('latin1');
+    console.log('>>> command:', command);
+
+    if (command === 'orgsheet') {
+        orgsheetMsg = parseOrgSheet(payload);
+        // console.log('>>> orgsheetMsg <<< ',orgsheetMsg)
+    }
+}
+
+const parseOrgSheet = (payload) => {
+    var offset = 0;
+    var n = 0
+    // var hexpayload=bufToStr(payload)
+    // console.log('>>> payload:', hexpayload, hexpayload.length);
+    var orgSheet = new OrgSheet();
+    orgSheet.sequence = ftNumberI();
+    orgSheet.pks_out = ftVarStrList();
+    orgSheet.last_uocks = ftArrayq();
+    orgSheet.version = ftNumberI();
+    orgSheet.tx_in = ftArrayTxIn();
+    orgSheet.tx_out = ftArrayTxOut();
+    orgSheet.lock_time = ftNumberI();
+    orgSheet.signature = ftVarString();
+
+    function ftArrayTxOut() {
+        var b = readSlice(1);
+        n = bufToNumber(b);
+        var arrTxnout = [];
+        if (n < 0xFD) {
+            for (var i = 0; i < n; i++) {
+                var txo = new TxnOut();
+                txo.value = ftNumberq();
+                txo.pk_script = ftVarString();
+                arrTxnout.push(txo);
+            }
+        }
+        return arrTxnout;
+    }
+
+    function ftArrayTxIn() {
+        var b = readSlice(1);
+        n = bufToNumber(b);
+        var arrTxnIn = [];
+        if (n < 0xFD) {
+            for (var i = 0; i < n; i++) {
+                var txIn = new TxnIn();
+                var outPoint = new OutPoint();
+                outPoint.hash = ftBytes(32);
+                outPoint.index = ftNumberI();
+                txIn.prev_output = outPoint;
+                txIn.sig_script = ftVarString();
+                txIn.sequence = ftNumberI();
+                arrTxnIn.push(txIn);
+            }
+        }
+        return arrTxnIn;
+    }
+
+
+    function ftVarStrList() {
+        var b = readSlice(1)
+        var n = bufToNumber(b);
+        var s = '';
+        var list = [];
+        if (n < 0xFD) {
+            for (var i = 0; i < n; i++) {
+                var varstrList = new VarStrList();
+                b = readSlice(1);
+                var m = bufToNumber(b);
+                if (m < 0xFD) {
+                    for (var j = 0; j < m; j++) {
+                        var p = readSlice(1);
+                        var q = bufToNumber(p);
+                        var s = readSlice(q);
+                        s = bufToStr(s);
+                        varstrList.items.push(s);
+                    }
+                    list.push(varstrList);
+                }
+            }
+        }
+        console.log('pks_out:',list,list.length);
+        return list;
+    }
+
+    function ftArrayq() {
+        var b = readSlice(1);
+        var n = bufToNumber(b);
+        var num = [];
+        if (n < 0xFD) {
+            n = ftNumberq();
+            num.push(n);
+        }
+        return num;
+    }
+
+    function ftVarString() {
+        var a = readSlice(1);
+        var n = bufToNumber(a);
+        var b;
+        if (n < 0xFD) {
+            b = readSlice(n);
+        } else {
+        }
+        return bufToStr(b);
+    }
+
+    function FtVarInteger() {
+        var a = readSlice(1);
+        var n = bufToNumber(a);
+        var b;
+        if (n < 0xFD) {
+            b = a;
+        } else if (n <= 0xFFFF) {
+            b = readSlice(2);
+        } else if (n <= 0xFFFFFFFF) {
+            b = readSlice(4);
+        } else {
+            b = readSlice(8);
+        }
+        return bufToNumber(b);
+    }
+
+    function ftBytes(n) {
+        var b = readSlice(n);
+        return bufToStr(b);
+    }
+
+    function ftNumberI() {
+        var b = readSlice(4);
+        var n = bufToNumber(LE(b));
+        return n;
+    }
+
+    function ftNumberq() {
+        var b = readSlice(8);
+        var n = bufToNumber(LE(b));
+        return n;
+    }
+
+    function readSlice(num) {
+        var b = payload.slice(offset, offset + num);
+        offset += num;
+        return b;
+    }
+
+    return orgSheet;
+}
+
+function LE(buf) {
+    var arr = [];
+    for (var i = 0; i < buf.length; i++) {
+        arr.push(buf[i]);
+    }
+    arr = arr.reverse();
+    var buf2 = Buffer.from(arr);
+    return buf2;
+}
+
+function bufToNumber(buf) {
+    var t = 0;
+    for (var i = buf.length - 1; i >= 0; i--) {
+        let b = buf[i];
+        var d = Math.pow(256, buf.length - i - 1);
+        t += b * d;
+    }
+    return t;
+}
+
+
+function bufToStr(buf) {
+    var s = '';
+    buf.forEach(ele => {
+        var tmp = ele.toString(16);
+        if (tmp.length === 1) {
+            s += '0' + tmp;
+        } else {
+            s += tmp;
+        }
+    });
+    return s;
+}
+
+function strip(buf) {
+    var arr = [];
+    for (var i = 0; i < buf.length; i++) {
+        arr.push(buf[i]);
+    }
+    for (var i = arr.length - 1; i >= 0; i--) {
+        if (arr[i] == 0x00) {
+            arr.splice(i, 1);
+        } else {
+            break;
+        }
+    }
+    return Buffer.from(arr);
+}
 
 module.exports = {
     verify, query_sheet
