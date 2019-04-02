@@ -103,7 +103,6 @@ function getwallet(){
     var s=aes.Decrypt(prvkey,'xieyc');
     s=s.slice(2);
     var n=bs58check.decode(s);
-    console.log('n:',n,n.length);
     var prvKeyBuf=n.slice(1,33);
     var wallet=new Wallet();
     wallet.pubkey=secret.getPubKey(prvKeyBuf);

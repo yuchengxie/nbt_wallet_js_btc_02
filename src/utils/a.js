@@ -8,7 +8,8 @@ var URL = 'http://raw0.nb-chain.net/txn/sheets/sheet';
 let dhttp = require('dhttp')
 var Buffer = require('safe-buffer').Buffer
 const bs58 = require('bs58')
-const file=require('./file')
+const file = require('./file')
+const script = require('../nscript/script')
 
 var format = require('../parse/format').Format
 var messages = require('../parse/messages')
@@ -294,10 +295,11 @@ const compayload = (msg) => {
 
     function dftNumberI(n) {
         b = new Buffer(4);
+        //n转16进制buffer
         b.writeUInt16LE(n);
         a = Buffer.concat([a, b]);
     }
-
+    
     function dftNumberq(n) {
         b = new Buffer(8);
         b.writeInt32LE(n);
@@ -326,8 +328,11 @@ dhttp({
     body: buf
 }, function (err, res) {
     if (err) throw err;
-    
+
     txnparse(res.body)
+
+    var wallet = file.getwallet();
+    // var coin_hash = Buffer.concat([wallet.pubkey, wallet.coin_type0]);
     var d = {};
     var payto = makesheet.pay_to
     for (var i = 0; i < payto.length; i++) {
@@ -337,22 +342,21 @@ dhttp({
             d[ret] = p.value;
         }
     }
-    // var tx_out = orgsheetMsg.tx_out;
-    // console.log('>>> tx_out:', tx_out);
-    // for (var i = 0; i < tx_out.length; i++) {
-    //     var item = tx_out[i];
-    //     if (item.value === 0 && item.pk_script.slice(0, 2) == '6a') {
-    //         continue;
-    //     }
-    // }
 
-    var pks_out0=orgsheetMsg.pks_out[0].items;
-    var pks_num=pks_out0.length;
-    var tx_ins2=[];
-    var wallet=file.getwallet();
-    console.log('wallet:',wallet);
-    // console.log('pub_key:',pub_key,pub_key.length);
-    // console.log('pks_out0:',pks_out0);
+
+    var pks_out0 = orgsheetMsg.pks_out[0].items;
+    var pks_num = pks_out0.length;
+    var tx_ins2 = [];
+    // console.log('pks_num:',pks_num);
+    //sign every inputs
+    var tx_in = orgsheetMsg.tx_in;
+    for (var idx = 0; idx < tx_in.length; idx++) {
+        if (idx < pks_num) {
+            var hash_type = 1;
+            var payload = script.make_payload(pks_out0[idx], orgsheetMsg.version, orgsheetMsg.tx_in, orgsheetMsg.tx_out, 0, idx, hash_type)  //lock_time=0
+
+        }
+    }
 
 })
 
@@ -464,7 +468,7 @@ const parseOrgSheet = (payload) => {
                 }
             }
         }
-        console.log('pks_out:',list,list.length);
+        // console.log('pks_out:', list, list.length);
         return list;
     }
 
