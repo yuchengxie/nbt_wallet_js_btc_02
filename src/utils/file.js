@@ -93,6 +93,7 @@ function Wallet(){
     this.testnet=false;
     this.prvkey='';
     this.pubkey='';
+    this.BIP32='';
 }
 
 function getwallet(){
@@ -105,10 +106,12 @@ function getwallet(){
     var n=bs58check.decode(s);
     var prvKeyBuf=n.slice(1,33);
     var wallet=new Wallet();
+    wallet.BIP32=secret.getBIP32(prvKeyBuf);
     wallet.pubkey=secret.getPubKey(prvKeyBuf);
     wallet.prvkey=prvKeyBuf;
     return wallet;
 }
+
 
 function loadFromFile(filename, passphrase) {
     let addr = '';

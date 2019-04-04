@@ -5,6 +5,7 @@ const bip32 = require('bip32')
 const ripemd160 = require('ripemd160');
 const wif = require('wif');
 const AES = require('./aes')
+const bitcoin = require('bitcoinjs-lib');
 
 const key = 'xieyc';
 
@@ -24,17 +25,24 @@ function saveWallet(prvKeyStr) {
     return encrypt_prvKey;
 }
 
-
-function getPubKey(prvKeyBuf) {
-    let BIP32 = bip32.fromPrivateKey(prvKeyBuf, new Buffer(32));
-    return BIP32.publicKey;
-}
-
 function createWallet(str) {
     console.log('> str:' + str, str.length);
     if (str.length < 16 || str.length > 32) throw new Error('长度必须16到32之间');
     let BIP32 = bip32.fromSeed(Buffer.from(str));
     let prvKeyBuf = BIP32.privateKey;
+
+    // var buf='123';
+    // var hash=bitcoin.crypto.sha256(buf);
+    // var signature=BIP32.sign(hash);
+
+    // console.log('signature:',signature,signature.length);
+
+    // var result= BIP32.verify(hash.slice(1),signature);
+    // console.log('result:',result);
+
+
+
+
     console.log('> prvKeyBuf:', prvKeyBuf, prvKeyBuf.length);
     let prvKeyStr = BufferToString(prvKeyBuf);
     console.log('> prvKeyStr:', prvKeyStr, prvKeyStr.length);
@@ -53,6 +61,39 @@ function createWallet(str) {
         addr: addr
     }
     return data;
+}
+
+var BIP32;
+function sign(buf) {
+    console.log(BIP32);
+    console.log('buf:', buf, buf.length);
+    var b = BIP32.sign(new Buffer('123123'));
+    return b;
+}
+
+function testgetBIP32FromCfg(cfg, passphrase) {
+    return '';
+}
+
+function sign(BIP32,buf){
+    var hash=bitcoin.crypto.sha256(buf);
+    var s=BIP32.sign(hash);
+    return s;
+}
+
+function verify(BIP32,data){
+}
+
+//改装
+function getPubKey(prvKeyBuf) {
+    BIP32 = bip32.fromPrivateKey(prvKeyBuf, new Buffer(32));
+    return BIP32.publicKey;
+}
+
+//改装
+function getBIP32(prvKeyBuf) {
+    BIP32 = bip32.fromPrivateKey(prvKeyBuf, new Buffer(32));
+    return BIP32;
 }
 
 //根据私钥生成公钥
@@ -132,3 +173,7 @@ exports.saveWallet = saveWallet
 exports.createWallet = createWallet
 exports.getPubKey = getPubKey
 exports.genAddrFromCfg = genAddrFromCfg
+exports.getBIP32 = getBIP32
+exports.sign = sign
+exports.verify = verify
+exports.testgetBIP32FromCfg = testgetBIP32FromCfg

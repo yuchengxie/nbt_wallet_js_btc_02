@@ -3,13 +3,14 @@ const _TX_TRANSFER_MAX = 1000000000000     //10000 NBC
 const WEB_SERVER_ADDR = 'http://raw0.nb-chain.net'
 const fs = require('fs');
 const sha256 = require('js-sha256')
-const axios = require('axios')
 var URL = 'http://raw0.nb-chain.net/txn/sheets/sheet';
 let dhttp = require('dhttp')
 var Buffer = require('safe-buffer').Buffer
 const bs58 = require('bs58')
 const file = require('./file')
 const script = require('../nscript/script')
+const secret = require('./secret')
+
 
 var format = require('../parse/format').Format
 var messages = require('../parse/messages')
@@ -29,6 +30,14 @@ function OrgSheet() {
     this.tx_out = [];
     this.lock_time = 0;
     this.signature = '';
+}
+
+function Transaction() {
+    this.version = 0;
+    this.tx_in = [];
+    this.tx_out = [];
+    this.lock_time = 0;
+    this.sig_raw = '';
 }
 
 function VarStrList() {
@@ -183,7 +192,6 @@ function submit_txn_(msg, submit) {
     //4-16
     var command = new Buffer(12);
     command.write('makesheet', 0);
-    // console.log('>>> command:', command);
     //24-
     // var payload = convpayload(msg);
     var payload = compayload(msg);
@@ -299,7 +307,7 @@ const compayload = (msg) => {
         b.writeUInt16LE(n);
         a = Buffer.concat([a, b]);
     }
-    
+
     function dftNumberq(n) {
         b = new Buffer(8);
         b.writeInt32LE(n);
@@ -309,6 +317,9 @@ const compayload = (msg) => {
 }
 
 function toBuffer(hex) {
+    if (hex.length % 2 != 0) {
+        hex = '0' + hex;
+    }
     var typedArray = new Uint8Array(hex.match(/[\da-f]{2}/gi).map(function (h) {
         return parseInt(h, 16)
     }))
@@ -349,27 +360,156 @@ dhttp({
     var tx_ins2 = [];
     // console.log('pks_num:',pks_num);
     //sign every inputs
-    var tx_in = orgsheetMsg.tx_in;
-    for (var idx = 0; idx < tx_in.length; idx++) {
+    var tx_In = orgsheetMsg.tx_in;
+    for (var idx = 0; idx < tx_In.length; idx++) {
+        var tx_in = tx_In[idx];
         if (idx < pks_num) {
             var hash_type = 1;
             var payload = script.make_payload(pks_out0[idx], orgsheetMsg.version, orgsheetMsg.tx_in, orgsheetMsg.tx_out, 0, idx, hash_type)  //lock_time=0
+            //签名
+            console.log('payload:', payload, payload.length);
+            var BIP32 = file.getwallet().BIP32;
+            // console.log('>>> bip32:',BIP32);
+            var sig = Buffer.concat([secret.sign(BIP32, payload), CHR(hash_type)]);
+            // console.log('sig:', sig, sig.length);
+            var pub_key = BIP32.publicKey;
+            // console.log('pub_key:',pub_key,pub_key.length);
+            var sig_script = Buffer.concat([CHR(sig), sig, CHR(pub_key), pub_key]);
+            // console.log('sig_script:', sig_script, sig_script.length);
+            var txin = new TxnIn();
+            tx_in.prev_output, sig_script, tx_in.sequence
+            txin.prev_output = tx_in.prev_output;
+            txin.sig_script = tx_in.sig_script;
+            txin.sequence = tx_in.sequence;
+            tx_ins2.push(txin);
+        }
+    }
+    console.log('tx_ins2:', tx_ins2, tx_ins2.length);
+
+    // txn = protocol.Transaction(msg2.version,tx_ins2,msg2.tx_out,msg2.lock_time,b'')
+    var transaction = new Transaction();
+    transaction.version = orgsheetMsg.version;
+    transaction.tx_in = tx_ins2;
+    transaction.tx_out = orgsheetMsg.tx_out;
+    transaction.lock_time = orgsheetMsg.lock_time;
+    transaction.sig_raw = 0x0;
+
+    var p = compayloadTran(transaction);
+    console.log('>>> tranmsg:', transaction);
+    console.log('>>> compayloadTran:', p, p.length);
+})
+
+function compayloadTran(msg) {
+    var a = new Buffer(0);
+    var b;
+
+    for (var name in msg) {
+        if (name === 'version') {
+            dftNumberI(msg['version']);
+        }
+        else if (name === 'tx_in') {
+            dftArrayTxnIn();
+        } else if (name === 'tx_out') {
+            dftArrayTxnOut();
+        } else if (name === 'lock_time') {
+            dftNumberI(msg['lock_time']);
+        } else if (name === 'sig_raw') {
+            dftVarString(msg['sig_raw']);
+        }
+    }
+
+    function dftArrayTxnOut() {
+        var num = msg['tx_out'].length;
+        if (num < 0xFD) {
+            dftNumber1(num);
+            var tx_out = msg['tx_out'][i]
+            for (var i = 0; i < num; i++) {
+                var tx_out = msg['tx_out'][i]
+                var value = tx_out['value'];
+                dftNumberq(value);
+                var pk_script = tx_out['pk_script'];
+                dftVarString(pk_script);
+            }
 
         }
     }
 
-})
+    function dftArrayTxnIn() {
+        var num = msg['tx_in'].length;
+        if (num < 0xFD) {
+            dftNumber1(num);
+            for (var i = 0; i < num; i++) {
+                var tx_in = msg['tx_in'][i];
+                var prev_output = tx_in['prev_output'];
+                var hash = prev_output.hash;
+                dftBytes32(hash);
+                var index = prev_output.index;
+                dftNumberI(index);
+                var sig_script = tx_in['sig_script'];
+                dftVarString(sig_script);
+                var sequence = tx_in['sequence'];
+                dftNumberI(sequence);
+            }
+
+        }
+    }
+
+    function dftVarString(str) {
+        var b = toBuffer(str);
+        if (b.length < 0xFD) {
+            a = Buffer.concat([a, b]);
+        }
+    }
+
+    function dftBytes32(hash) {
+        var b = toBuffer(hash);
+        a = Buffer.concat([a, b]);
+    }
+
+    function dftNumber1(n) {
+        b = new Buffer(1);
+        b.writeUInt8(n);
+        a = Buffer.concat([a, b]);
+    }
+
+    function dftNumberH(n) {
+        b = new Buffer(2);
+        b.writeUInt8(n)
+        a = Buffer.concat([a, b]);
+    }
+
+    function dftNumberI(n) {
+        b = new Buffer(4);
+        //n转16进制buffer
+        b.writeUInt32LE(n);
+        a = Buffer.concat([a, b]);
+    }
+
+    function dftNumberq(n) {
+        b = new Buffer(8);
+        var c = n.toString(16);
+        var d = toBuffer(c);
+        for (var i = 0; i < d.length; i++) {
+            b[i] = d[i];
+        }
+        a = Buffer.concat([a, b.reverse()]);
+    }
+    return a;
+}
+
+function CHR(buf) {
+    var b = new Buffer(1);
+    var len = buf.length;
+    b.writeInt8(len);
+    return b;
+}
 
 function decode_check(v) {
     var a = bs58.decode(v);
     var ret = a.slice(0, a.length - 4);
     var check = a.slice(a.length - 4);
     var checksum = toBuffer(sha256(toBuffer(sha256(ret))));
-    // console.log('ret:', ret, ret.length)
-    // console.log('check', check, check.length);
-    // console.log('checksum:', checksum.slice(0, 4))
     if (checksum.compare(check) == 1) {
-        // console.log('ret:', ret, ret.length)
         return ret.slice(1);
     }
 }
@@ -379,7 +519,7 @@ function txnparse(buf) {
         throw Error('bad magic number');
     }
     var len = buf.slice(16, 20).readUInt16LE();
-    console.log('len buffer:', buf.slice(16, 20), len);
+    // console.log('len buffer:', buf.slice(16, 20), len);
     var payload = buf.slice(24, 24 + len);
 
     var checksum = toBuffer(sha256(toBuffer(sha256(payload)))).slice(0, 4);
@@ -388,19 +528,15 @@ function txnparse(buf) {
     }
 
     var command = strip(buf.slice(4, 16)).toString('latin1');
-    console.log('>>> command:', command);
 
     if (command === 'orgsheet') {
         orgsheetMsg = parseOrgSheet(payload);
-        // console.log('>>> orgsheetMsg <<< ',orgsheetMsg)
     }
 }
 
 const parseOrgSheet = (payload) => {
     var offset = 0;
-    var n = 0
-    // var hexpayload=bufToStr(payload)
-    // console.log('>>> payload:', hexpayload, hexpayload.length);
+    var n = 0;
     var orgSheet = new OrgSheet();
     orgSheet.sequence = ftNumberI();
     orgSheet.pks_out = ftVarStrList();
@@ -468,7 +604,6 @@ const parseOrgSheet = (payload) => {
                 }
             }
         }
-        // console.log('pks_out:', list, list.length);
         return list;
     }
 
